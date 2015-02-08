@@ -20,7 +20,9 @@
 
             ["{identifier}",            "return {'ID': yytext}"],
             ["\\d+",                    "return this.validateNumber(yytext)"],
-            ["'.'",                     "return {KWD_CHAR:yytext.substring(1,yytext.length-1)}"],
+            ["'.'",                     "return {KWD_CHAR:yytext.substring(1,yyleng-1)}"],
+
+            ["\\/\\*.*",                    "return this.validateComment(yytext)"],
 
             ["\\+",                     "return 'OPER_ADD'"],
             ["\\-",                     "return 'OPER_SUB'"],
@@ -46,10 +48,12 @@
             [";",                       "return 'SEMICLN'"],
 
 
+
             ["\\s+", "/* skip spaces */"],
             [".", "return this.validateInvalidToken(yytext)"],
         ]
     };
+
     
     module.exports = new minCLexer(grammar);
 })()

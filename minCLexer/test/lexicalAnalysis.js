@@ -9,7 +9,7 @@ describe('minimal C lexer', function() {
             assert.deepEqual({ID: 'Abc'}, minCLexer.lex());
             assert.deepEqual({ID: 'abc123'}, minCLexer.lex());
             assert.deepEqual({ID: 'ABC123'}, minCLexer.lex());
-        }),
+        })
     }),
     describe('recognizes integer constants', function() {
         it('should not allow leading zeros', function() {
@@ -48,7 +48,7 @@ describe('minimal C lexer', function() {
         }),
         it('handles unclosing quote', function() {
             minCLexer.setInput("'a");
-            assert.equal("Unclosed quote on character", minCLexer.lex());
+            assert.equal("Unclosed quote on character Line: 1 Column: 1", minCLexer.lex());
         })
     }),
     describe('recognizes reserved words', function() {
@@ -98,6 +98,25 @@ describe('minimal C lexer', function() {
             /* punctuation */
             assert.equal("COMMA", minCLexer.lex());
             assert.equal("SEMICLN", minCLexer.lex());
+        })
+    }),
+    describe('recognizes comment blocks', function() {
+        it('should not generate tokens for comments', function() {
+            /* 1 is the return value when lexing is complete */
+            minCLexer.setInput("/* test comment block */");
+            assert.equal(1, minCLexer.lex());
+        }),
+        it('should generate error if comemnt block is not closed properly', function() {
+            minCLexer.setInput("/* test comment block unclosed ");
+            assert.equal("Unterminated comment Line: 1 Column: 31", minCLexer.lex());
+        }),
+        it('should handle the comment block even if there are astericks within', function() {
+            minCLexer.setInput("/* test comment" +
+                               " * with astericks" +
+                               " * closed properly" + 
+                               "  **/");
+            assert.equal(1, minCLexer.lex());
+                
         })
     }),
     describe('whitespace should be ignored', function() {
