@@ -10,10 +10,6 @@ describe('minimal C lexer', function() {
             assert.deepEqual({ID: 'abc123'}, minCLexer.lex());
             assert.deepEqual({ID: 'ABC123'}, minCLexer.lex());
         }),
-        it('should skip whitespace', function() {
-            minCLexer.setInput('    x');
-            assert.deepEqual({ID: 'x'}, minCLexer.lex());   
-        })
     }),
     describe('recognizes integer constants', function() {
         it('should not allow leading zeros', function() {
@@ -103,5 +99,12 @@ describe('minimal C lexer', function() {
             assert.equal("COMMA", minCLexer.lex());
             assert.equal("SEMICLN", minCLexer.lex());
         })
-    })  
+    }),
+    describe('whitespace should be ignored', function() {
+        it('should return 1 when given a string of empty spaces', function() {
+            /* 1 is the return value when lexing is complete */
+            minCLexer.setInput('              ');
+            assert.equal(1, minCLexer.lex());
+        })
+    })
 });
