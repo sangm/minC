@@ -6,9 +6,15 @@ var rl = readline.createInterface({
     output: process.stdout
 });
 
+var handleInput = function(line) {
+    minCLexer.setInput(line);
+    var result = minCLexer.lex();
+    while (result !== 1) {
+        console.log(result);
+        result = minCLexer.lex();
+    }
+}
 
 rl.on('line', function(line) {
-    minCLexer.setInput(line);
-    console.log(minCLexer.lex());
-    console.log(minCLexer.lex());
+    handleInput(line);
 })
