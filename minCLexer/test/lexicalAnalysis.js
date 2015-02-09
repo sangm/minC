@@ -39,16 +39,16 @@ describe('minimal C lexer', function() {
     describe('recognizes character constants', function() {
         it('captures the value within the quotes', function() {
             minCLexer.setInput("'a' 'A' '1' '@' '!' '_'");
-            assert.deepEqual({KWD_CHAR: "a"}, minCLexer.lex());
-            assert.deepEqual({KWD_CHAR: "A"}, minCLexer.lex());
-            assert.deepEqual({KWD_CHAR: "1"}, minCLexer.lex());
-            assert.deepEqual({KWD_CHAR: "@"}, minCLexer.lex());
+            assert.deepEqual({CHARCONST: "a"}, minCLexer.lex());
+            assert.deepEqual({CHARCONST: "A"}, minCLexer.lex());
+            assert.deepEqual({CHARCONST: "1"}, minCLexer.lex());
+            assert.deepEqual({CHARCONST: "@"}, minCLexer.lex());
             /* assert.deepEqual({KWD_CHAR: "!"}, minCLexer.lex()); */
             /* assert.deepEqual({KWD_CHAR: "_"}, minCLexer.lex()); */
         }),
         it('handles unclosing quote', function() {
             minCLexer.setInput("'a");
-            assert.equal("Unclosed quote on character Line: 1 Column: 1", minCLexer.lex());
+            assert.equal("Unclosed quote on character Line: 1 Column: 2", minCLexer.lex());
         })
     }),
     describe('recognizes reserved words', function() {
@@ -68,6 +68,28 @@ describe('minimal C lexer', function() {
             assert.equal("KWD_VOID", minCLexer.lex());
         })
     }),
+    describe('recognizes string constants', function() {
+        it('should get values within quotes', function() {
+            minCLexer.setInput('"abcabc"');
+            assert.deepEqual({STRCONST: "abcabc"}, minCLexer.lex());
+        }),
+        it('should handle tab character', function() {
+            minCLexer.setInput('"abc\tabc"');
+            assert.deepEqual({STRCONST: "abc\tabc"}, minCLexer.lex());
+        }),
+        it('should handle escaped quote', function() {
+            minCLexer.setInput('"abc\\"def"');
+            assert.deepEqual({STRCONST: "abc\\\"def"}, minCLexer.lex());
+        })
+        it('should handle escape characters', function() {
+            minCLexer.setInput('"abc\n123"');
+            assert.deepEqual({STRCONST: "abc\n123"}, minCLexer.lex());
+        }),
+        it('should detect unterminated string', function() {
+            minCLexer.setInput('"abc\\"');
+            assert.equal('Unterminated string at Line: 1 Column: 6', minCLexer.lex());
+        })
+    })
     describe('recognizes operators and special symbols', function() {
         it('should return predefined values for reserved operators', function() {
             var reserved = ['+', '-', '*', '/', '<', '>', '<=', '>=',

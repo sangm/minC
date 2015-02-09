@@ -1,4 +1,4 @@
-'use strict';
+'use strict'; 
 
 (function () {
     var minCLexer = require('jison-lex');
@@ -20,9 +20,10 @@
 
             ["{identifier}",            "return {'ID': yytext}"],
             ["\\d+",                    "return this.validateNumber(yytext)"],
-            ["'.'",                     "return {KWD_CHAR:yytext.substring(1,yyleng-1)}"],
+            ['"((?:(?=(\\\\?))\\2(?:.|\\n))*?)"', "return {STRCONST: yytext.substring(1, yyleng-1)}"],
+            ["'.'",                     "return {CHARCONST:yytext.substring(1,yyleng-1)}"],
 
-            ["\\/\\*.*",                    "return this.validateComment(yytext)"],
+            ["\\/\\*.*",                "return this.validateComment(yytext)"],
 
             ["\\+",                     "return 'OPER_ADD'"],
             ["\\-",                     "return 'OPER_SUB'"],
@@ -47,10 +48,8 @@
             [",",                       "return 'COMMA'"],
             [";",                       "return 'SEMICLN'"],
 
-
-
             ["\\s+", "/* skip spaces */"],
-            [".", "return this.validateInvalidToken(yytext)"],
+            [".+", "return this.validateInvalidToken(yytext)"],
         ]
     };
 
