@@ -7,7 +7,13 @@ var handleInput = function(line) {
     minCLexer.setInput(line);
     var result = minCLexer.lex();
     while (result !== 1) {
-        console.log(result);
+        if (typeof result === "object") {
+            var key = Object.keys(result);
+            console.log('<' + key + ', ' + result[key] + '>');
+        }
+        else {
+            console.log(result);
+        }
         result = minCLexer.lex();
     }
 }

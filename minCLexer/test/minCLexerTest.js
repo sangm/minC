@@ -48,7 +48,7 @@ describe('minimal C lexer', function() {
         }),
         it('handles unclosing quote', function() {
             minCLexer.setInput("'a");
-            assert.equal("Unclosed quote on character Line: 1 Column: 2", minCLexer.lex());
+            assert.equal("Unclosed quote on character (1,2)", minCLexer.lex());
         })
     }),
     describe('recognizes reserved words', function() {
@@ -58,14 +58,14 @@ describe('minimal C lexer', function() {
             // concate reserved into one long string
             var reservedWords = reserved.join('');
             minCLexer.setInput(reservedWords);
-            assert.equal('KWD_IF', minCLexer.lex());
-            assert.equal("KWD_ELSE", minCLexer.lex());
-            assert.equal("KWD_WHILE", minCLexer.lex());
-            assert.equal("KWD_INT", minCLexer.lex());
-            assert.equal("KWD_STRING", minCLexer.lex());
-            assert.equal("KWD_CHAR", minCLexer.lex());
-            assert.equal("KWD_RETURN", minCLexer.lex());
-            assert.equal("KWD_VOID", minCLexer.lex());
+            assert.deepEqual({KWD_IF: 'if'}, minCLexer.lex());
+            assert.deepEqual({KWD_ELSE: 'else'}, minCLexer.lex());
+            assert.deepEqual({KWD_WHILE: 'while'}, minCLexer.lex());
+            assert.deepEqual({KWD_INT: 'int'}, minCLexer.lex());
+            assert.deepEqual({KWD_STRING: 'string'}, minCLexer.lex());
+            assert.deepEqual({KWD_CHAR: 'char'}, minCLexer.lex());
+            assert.deepEqual({KWD_RETURN: 'return'}, minCLexer.lex());
+            assert.deepEqual({KWD_VOID: 'void'}, minCLexer.lex());
         })
     }),
     describe('recognizes string constants', function() {
@@ -79,7 +79,7 @@ describe('minimal C lexer', function() {
         }),
         it('should handle escaped quote', function() {
             minCLexer.setInput('"abc\\"def"');
-            assert.deepEqual({STRCONST: "abc\\\"def"}, minCLexer.lex());
+            assert.deepEqual({STRCONST: "abc\"def"}, minCLexer.lex());
         })
         it('should handle escape characters', function() {
             minCLexer.setInput('"abc\n123"');
@@ -87,7 +87,7 @@ describe('minimal C lexer', function() {
         }),
         it('should detect unterminated string', function() {
             minCLexer.setInput('"abc\\"');
-            assert.equal('Unterminated string at Line: 1 Column: 6', minCLexer.lex());
+            assert.equal('Unterminated string (1,6)', minCLexer.lex());
         })
     })
     describe('recognizes operators and special symbols', function() {
@@ -97,29 +97,29 @@ describe('minimal C lexer', function() {
             var reservedSymbols = reserved.join('');
             minCLexer.setInput(reservedSymbols);
             /* operators */
-            assert.equal("OPER_ADD", minCLexer.lex());
-            assert.equal("OPER_SUB", minCLexer.lex());
-            assert.equal("OPER_MUL", minCLexer.lex());
-            assert.equal("OPER_DIV", minCLexer.lex());
-            assert.equal("OPER_LT", minCLexer.lex());
-            assert.equal("OPER_GT", minCLexer.lex());
-            assert.equal("OPER_LTE", minCLexer.lex());
-            assert.equal("OPER_GTE", minCLexer.lex());
-            assert.equal("OPER_EQ", minCLexer.lex());
-            assert.equal("OPER_NEQ", minCLexer.lex());
-            assert.equal("OPER_ASGN", minCLexer.lex());
+            assert.deepEqual({OPER_ADD:  '+'}, minCLexer.lex());
+            assert.deepEqual({OPER_SUB:  '-'}, minCLexer.lex());
+            assert.deepEqual({OPER_MUL:  '*'}, minCLexer.lex());
+            assert.deepEqual({OPER_DIV:  '/'}, minCLexer.lex());
+            assert.deepEqual({OPER_LT:   '<'}, minCLexer.lex());
+            assert.deepEqual({OPER_GT:   '>'}, minCLexer.lex());
+            assert.deepEqual({OPER_LTE: '<='}, minCLexer.lex());
+            assert.deepEqual({OPER_GTE: '>='}, minCLexer.lex());
+            assert.deepEqual({OPER_EQ:  '=='}, minCLexer.lex());
+            assert.deepEqual({OPER_NEQ: '!='}, minCLexer.lex());
+            assert.deepEqual({OPER_ASGN: '='}, minCLexer.lex());
             
             /* brackets & parens */
-            assert.equal("LSQ_BRKT", minCLexer.lex());
-            assert.equal("RSQ_BRKT", minCLexer.lex());
-            assert.equal("LCRLY_BRKT", minCLexer.lex());
-            assert.equal("RCRLY_BRKT", minCLexer.lex());
-            assert.equal("LPAREN", minCLexer.lex());
-            assert.equal("RPAREN", minCLexer.lex());
+            assert.deepEqual({LSQ_BRKT: '['}, minCLexer.lex());
+            assert.deepEqual({RSQ_BRKT: ']'}, minCLexer.lex());
+            assert.deepEqual({LCRLY_BRKT: '{'}, minCLexer.lex());
+            assert.deepEqual({RCRLY_BRKT: '}'}, minCLexer.lex());
+            assert.deepEqual({LPAREN: '('}, minCLexer.lex());
+            assert.deepEqual({RPAREN: ')'}, minCLexer.lex());
 
             /* punctuation */
-            assert.equal("COMMA", minCLexer.lex());
-            assert.equal("SEMICLN", minCLexer.lex());
+            assert.deepEqual({COMMA: ','}, minCLexer.lex());
+            assert.deepEqual({SEMICLN: ';'}, minCLexer.lex());
         })
     }),
     describe('recognizes comment blocks', function() {
@@ -130,7 +130,7 @@ describe('minimal C lexer', function() {
         }),
         it('should generate error if comemnt block is not closed properly', function() {
             minCLexer.setInput("/* test comment block unclosed ");
-            assert.equal("Unterminated comment Line: 1 Column: 31", minCLexer.lex());
+            assert.equal("Unterminated comment (1,31)", minCLexer.lex());
         }),
         it('should handle the comment block even if there are astericks within', function() {
             minCLexer.setInput("/* test comment" +
