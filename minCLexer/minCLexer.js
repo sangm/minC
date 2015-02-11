@@ -23,7 +23,8 @@
             ['"((?:(?=(\\\\?))\\2(?:.|\\n))*?)"', "return this.validateString(yytext)"],
             ["'.'",                     "return {CHARCONST:yytext.substring(1,yyleng-1)}"],
 
-            ["\\/\\*.*",                "return this.validateComment(yytext)"],
+            ["\\/\\*(?:.|\\n)*?\\*\\/", "/* skip comments */"],
+            ["\\/\\*(?:.|\\n)+",        "/* invalid comment */ return this.validateInvalidToken(yytext)"],
 
             ["\\+",                     "return {OPER_ADD: '+'}"],
             ["\\-",                     "return {OPER_SUB: '-'}"],
@@ -49,7 +50,7 @@
             [";",                       "return {SEMICLN: ';'}"],
 
             ["\\s+", "/* skip spaces */"],
-            [".+", "return this.validateInvalidToken(yytext)"],
+            [".", "return this.validateInvalidToken(yytext)"],
         ]
     };
 

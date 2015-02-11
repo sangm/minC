@@ -48,7 +48,7 @@ describe('minimal C lexer', function() {
         }),
         it('handles unclosing quote', function() {
             minCLexer.setInput("'a");
-            assert.equal("Unclosed quote on character (1,2)", minCLexer.lex());
+            assert.equal("Unclosed quote on character (1,1)", minCLexer.lex());
         })
     }),
     describe('recognizes reserved words', function() {
@@ -87,7 +87,7 @@ describe('minimal C lexer', function() {
         }),
         it('should detect unterminated string', function() {
             minCLexer.setInput('"abc\\"');
-            assert.equal('Unterminated string (1,6)', minCLexer.lex());
+            assert.equal('Unterminated string (1,1)', minCLexer.lex());
         })
     })
     describe('recognizes operators and special symbols', function() {
