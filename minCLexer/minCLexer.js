@@ -20,8 +20,7 @@
 
             ["{identifier}",            "return {'ID': yytext}"],
             ["\\d+",                    "return this.validateNumber(yytext)"],
-            ['"((?:(?=(\\\\?))\\2(?:.|\\n))*?)"', "return this.validateString(yytext)"],
-            ["'.'",                     "return {CHARCONST:yytext.substring(1,yyleng-1)}"],
+            ['("|\')((?:(?=(\\\\?))\\3(?:.|\\n))*?)\\1', "return this.validateString(yytext)"],
 
             ["\\/\\*(?:.|\\n)*?\\*\\/", "/* skip comments */"],
             ["\\/\\*(?:.|\\n)+",        "/* invalid comment */ return this.validateInvalidToken(yytext)"],

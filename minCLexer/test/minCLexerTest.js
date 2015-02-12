@@ -49,6 +49,13 @@ describe('minimal C lexer', function() {
         it('handles unclosing quote', function() {
             minCLexer.setInput("'a");
             assert.equal("Unclosed quote on character (1,1)", minCLexer.lex());
+        }),
+        it('handles escaped characters', function() {
+            minCLexer.setInput("'\t' '\\\\' '\"' '\n'");
+            assert.deepEqual({CHARCONST: '\t'}, minCLexer.lex());
+            assert.deepEqual({CHARCONST: '\\'}, minCLexer.lex());
+            assert.deepEqual({CHARCONST: '\"'}, minCLexer.lex());
+            assert.deepEqual({CHARCONST: '\n'}, minCLexer.lex());
         })
     }),
     describe('recognizes reserved words', function() {
