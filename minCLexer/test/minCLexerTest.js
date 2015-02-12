@@ -14,7 +14,7 @@ describe('minimal C lexer', function() {
     describe('recognizes integer constants', function() {
         it('should not allow leading zeros', function() {
             minCLexer.setInput('0900 100 20000 30000 10000');
-            assert.equal('Minimal C does not allow leading 0s', minCLexer.lex());
+            assert.equal('Minimal C does not allow leading 0s (1,4)', minCLexer.lex());
             assert.deepEqual({INTCONST: 100}, minCLexer.lex());
             assert.deepEqual({INTCONST: 20000}, minCLexer.lex());
             assert.deepEqual({INTCONST: 30000}, minCLexer.lex());
