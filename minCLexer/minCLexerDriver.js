@@ -2,6 +2,10 @@ var fs = require('fs');
 var readline = require('readline');
 var minCLexer = require('./minCLexer.js');
 
+console.log("minC Scanner");
+console.log("provide an extra argument to run a scanner on the file itself");
+console.log("built by sangm (Sang Mercado)");
+console.log();
 
 var handleInput = function(line) {
     minCLexer.setInput(line);
