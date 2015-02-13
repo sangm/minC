@@ -103,6 +103,10 @@ describe('minimal C lexer', function() {
         it('should match the longest string', function() {
             minCLexer.setInput("integer");
             assert.deepEqual({ID: "integer"}, minCLexer.lex());
+        }),
+        it('should store escape characters correctly', function() {
+            minCLexer.setInput("\"abc\n123\"");
+            assert.equal(minCLexer.lex().STRCONST.length, 7);
         })
     })
     describe('recognizes operators and special symbols', function() {
