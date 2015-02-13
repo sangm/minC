@@ -41,12 +41,33 @@ describe('minC lexer working with files', function() {
             readFile('illegal.mC', function(tokens) {
                 assert.deepEqual({ILLEGAL_TOK: '@ (1,1)'}, tokens[0]);
                 assert.deepEqual({ILLEGAL_TOK: '& (2,1)'}, tokens[1]);
+                assert.deepEqual({ILLEGAL_TOK: '# (3,1)'}, tokens[2]);
+                assert.deepEqual({ILLEGAL_TOK: '` (4,1)'}, tokens[3]);
+                assert.deepEqual({ILLEGAL_TOK: '^ (5,1)'}, tokens[4]);
+                assert.deepEqual({ILLEGAL_TOK: "| (6,1)"}, tokens[5]);
+                assert.deepEqual("Unclosed quote on character (7,1)", tokens[6]);
+                assert.deepEqual({ILLEGAL_TOK: '\\ (8,1)'}, tokens[7]);
             })
         }),
         it('should recognize multibyte char literals', function() {
             readFile('multibyte-char-literals.mc', function(tokens) {
                 assert.deepEqual({CHARCONST: ''}, tokens[0]);
                 assert.deepEqual({CHARCONST: 'a'}, tokens[1]);
+                assert.deepEqual("Unclosed quote on character (3,4)", tokens[2]);
+                assert.deepEqual({CHARCONST: '\n'}, tokens[3]);
+                assert.deepEqual("Unclosed quote on character (5,5)", tokens[4]); // newline character counts as 2 characters
+                assert.deepEqual("Unclosed quote on character (6,5)", tokens[5]); // newline character counts as 2 characters
+                assert.deepEqual("Unclosed quote on character (7,6)", tokens[6]); // newline character counts as 2 characters
+            })
+        }),
+        it('should not crash given a binary file', function() {
+            readFile('random.mC', function(tokens) {
+                /* test is just opening file */
+            });
+        }),
+        it('should read string constants with tabs, newline', function() {
+            readFile('strtest.mC', function(tokens) {
+
             })
         })
     })

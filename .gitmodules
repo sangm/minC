@@ -1,0 +1,3 @@
+[submodule "minCLexer/input_files/cs4318_5331_test_inputs"]
+	path = minCLexer/input_files/cs4318_5331_test_inputs
+	url = https://github.com/zc1036/cs4318_5331_test_inputs

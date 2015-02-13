@@ -2,19 +2,23 @@
 
 (function () {
     var minCLexer = require('jison-lex');
+    var validate = require('./validate-tokens.js');
 
-    var func = function() { console.log("hello"); } 
-
-    function hello() { console.log(''); }
-
+    function functionsToString(functions) {
+        var result = Object.keys(validate).map(function(v) {
+            return String(validate[v]);
+        });
+        return result.join('\n');
+    };
+    
     var grammar = {
         macros: {
             "identifier": "[a-zA-Z][a-zA-Z0-9]*",
             "word": "[a-zA-Z0-9_]",
         },
-        actionInclude: String(hello), 
+        actionInclude: functionsToString(validate),
         rules: [
-            ["if",                      "hello(); return {KWD_IF: yytext};"],
+            ["if",                      "return {KWD_IF: yytext};"],
             ["else",                    "return {KWD_ELSE: yytext};"],
             ["while",                   "return {KWD_WHILE: yytext};"],
             ["int",                     "return {KWD_INT: yytext};"],
@@ -24,8 +28,8 @@
             ["void",                    "return {KWD_VOID: yytext};"],
 
             ["{identifier}",            "return {'ID': yytext}"],
-            ["\\d+",                    "return this.validateNumber(yytext)"],
-            ['("|\')((?:(?=(\\\\?))\\3(?:.|\\n))*?)\\1', "return this.validateString(yytext)"],
+            ["\\d+",                    "return validateNumber(yytext, yylloc)"],
+            ['("|\')((?:(?=(\\\\?))\\3(?:.|\\n))*?)\\1', "return validateString(yytext, yylloc)"],
             ['\\/\\*\s*', function() {
                 var result;
                 while((result = this.input()) != undefined) {
@@ -36,7 +40,7 @@
                         }
                     }
                 }
-                return this.validateInvalidToken(yytext);
+                return validateInvalidToken(yytext, yylloc);
             }],
             /* ["\\/\\*(?:.|\\n)*?\\*\\/", "/* skip comments "], */ 
 
@@ -64,7 +68,7 @@
             [";",                       "return {SEMICLN: ';'}"],
 
             ["\\s+", "/* skip spaces */"],
-            [".", "return this.validateInvalidToken(yytext)"],
+            [".", "return validateInvalidToken(yytext, yylloc)"],
         ],
         options: {flex: true}
     };

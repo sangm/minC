@@ -7,7 +7,7 @@
     "test": "test"
   },
   "dependencies": {
-    "jison-lex": "sangm/jison-lex"
+    "jison-lex": "^0.3.4"
   },
   "devDependencies": {
     "chai": "^2.0.0",
