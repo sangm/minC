@@ -67,7 +67,11 @@ describe('minC lexer working with files', function() {
         }),
         it('should read string constants with tabs, newline', function() {
             readFile('strtest.mC', function(tokens) {
-
+                assert.equal(tokens[0].STRCONST.length, 7);
+                assert.equal(tokens[1].STRCONST.length, 7);
+                assert.equal(tokens[2].STRCONST.length, 7);
+                assert.equal(tokens[3].STRCONST.length, 7);
+                assert.equal(tokens[4].STRCONST.length, 7);
             })
         })
     })
