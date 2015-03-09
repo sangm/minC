@@ -24,7 +24,10 @@
 
             ["{identifier}",            "return {'ID': yytext}"],
             ["\\d+",                    "return validateNumber(yytext, yylloc)"],
-            ['("|\')((?:(?=(\\\\?))\\3(?:.|\\n))*?)\\1', "return validateString(yytext, yylloc)"],
+            /*             ['("|\')((?:(?=(\\\\?))\\3(?:.|\\n))*?)\\1', "return validateString(yytext, yylloc)"], */
+            ['"|\'', function() {
+
+            }],
             ['\\/\\*\s*', function() {
                 var result;
                 while((result = this.input()) != undefined) {
