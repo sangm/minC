@@ -1,0 +1,39 @@
+{
+  "name": "minCLexer",
+  "version": "1.0.0",
+  "description": "Minimcal C Scanner",
+  "main": "minCLexer.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "jison": "^0.4.15",
+    "jison-lex": "sangm/jison-lex"
+  },
+  "devDependencies": {
+    "chai": "^2.0.0",
+    "mocha": "^2.1.0"
+  },
+  "scripts": {
+    "test": "npm run-script lexer && npm run-script parser",
+    "lexer": "node_modules/mocha/bin/mocha minCLexer/test",
+    "parser": "node_modules/mocha/bin/mocha minCParser/test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sangm/minC.git"
+  },
+  "keywords": [
+    "Compiler",
+    "Lexical",
+    "Analysis",
+    "Minimal",
+    "C"
+  ],
+  "author": "Sang Mercado (sangm)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sangm/minC/issues"
+  },
+  "homepage": "https://github.com/sangm/minC"
+}
