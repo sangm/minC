@@ -111,7 +111,7 @@ describe('minimal C lexer', function() {
         it('should disregard rest of the string', function() {
             minCLexer.setInput('"123');
             assert.equal(minCLexer.lex(), "Unterminated string (1,4)");
-            assert.equal(minCLexer.lex(), 1);
+            assert.equal('EOF', minCLexer.lex());
         })
     })
     describe('recognizes operators and special symbols', function() {
@@ -150,7 +150,7 @@ describe('minimal C lexer', function() {
         it('should not generate tokens for comments', function() {
             /* 1 is the return value when lexing is complete */
             minCLexer.setInput("/* test comment block */");
-            assert.equal(1, minCLexer.lex());
+            assert.equal('EOF', minCLexer.lex());
         }),
         it('should generate error if comemnt block is not closed properly', function() {
             minCLexer.setInput("/* test comment block unclosed ");
@@ -161,7 +161,7 @@ describe('minimal C lexer', function() {
                                " * with astericks" +
                                " * closed properly" + 
                                "  **/");
-            assert.equal(1, minCLexer.lex());
+            assert.equal('EOF', minCLexer.lex());
         }),
         it('should not mistake /* for divide, multiply', function() {
             minCLexer.setInput("/*");
@@ -172,7 +172,7 @@ describe('minimal C lexer', function() {
         it('should return 1 when given a string of empty spaces', function() {
             /* 1 is the return value when lexing is complete */
             minCLexer.setInput('              ');
-            assert.equal(1, minCLexer.lex());
+            assert.equal('EOF', minCLexer.lex());
         })
     })
 });

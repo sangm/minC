@@ -1,5 +1,5 @@
 (function () {
-    var validate = require('./validate-tokens.js');
+    var validate = require('../validate-tokens.js');
     function functionsToString(functions) {
         var result = Object.keys(validate).map(function(v) {
             return String(validate[v]);
@@ -24,10 +24,8 @@
 
             ["{identifier}",            "return {'ID': yytext}"],
             ["\\d+",                    "return validateNumber(yytext, yylloc)"],
-            /*             ['("|\')((?:(?=(\\\\?))\\3(?:.|\\n))*?)\\1', "return validateString(yytext, yylloc)"], */
-            ['"|\'', function() {
-
-            }],
+            ['("|\')((?:(?=(\\\\?))\\3(?:.|\\n))*?)\\1', "return validateString(yytext, yylloc)"],
+            
             ['\\/\\*\s*', function() {
                 var result;
                 while((result = this.input()) != undefined) {
@@ -66,7 +64,14 @@
             [";",                       "return {SEMICLN: ';'}"],
 
             ["\\s+", "/* skip spaces */"],
-            [".", "return validateInvalidToken(yytext, yylloc)"],
+            ["$", "return 'EOF'"],
+            [".", function() {
+                if (this.matched === '"') {
+                    // consume rest of characters
+                    while (this.input());
+                }
+                return validateInvalidToken(yytext, yylloc);
+            }],
         ],
         options: {flex: true}
     };

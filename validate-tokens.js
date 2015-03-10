@@ -3,7 +3,7 @@
         validateNumber: function validateNumber(number, location) {
             var regexPattern = /^[1-9]\d*/;
             return (regexPattern.test(number) || number === '0') 
-                ? {INTCONST: parseInt(number)} : validateInvalidToken(number, location);
+                ? 'INTCONST' : validateInvalidToken(number, location);
         },
         invalidToken: function validateInvalidToken(string, location) {
             if (location == null) {

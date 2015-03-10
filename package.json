@@ -11,6 +11,7 @@
     "jison-lex": "sangm/jison-lex"
   },
   "devDependencies": {
+    "babel": "^4.7.4",
     "chai": "^2.0.0",
     "gulp": "^3.8.11",
     "gulp-babel": "^4.0.0",

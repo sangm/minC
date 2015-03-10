@@ -1,20 +1,27 @@
+require('babel/register');
 var gulp = require('gulp');
+var sourcemaps = require('gulp-sourcemaps');
 var babel = require('gulp-babel');
 var mocha = require('gulp-mocha');
+var concat = require('gulp-concat');
 
-gulp.task('parser', function() {
-    return gulp.src('minCParser/src/*.js')
+gulp.task('parser', function(cb) {
+    gulp.src('minCParser/src/*.js')
                .pipe(babel())
                .on('error', function(err) {
                    console.log(err.message);
                })
-               .pipe(gulp.dest('minCParser/dist'))
+               .pipe(gulp.dest('minCParser/dist'));
+    cb();
 });
-gulp.task('parserTest', function() {
+gulp.task('parserTest', ['parser'], function() {
     return gulp.src('minCParser/test/*Test.js')
-               .pipe(mocha({reporter: 'nyan'}))
+               .pipe(babel())
+               .pipe(mocha({ 
+                   reporter: 'spec' 
+               }))
                .on('error', function(err) {
-                   console.log(err.message);
+                   console.trace(err);
                })
 });
 gulp.task('lexerTest', function() {
@@ -23,8 +30,8 @@ gulp.task('lexerTest', function() {
 });
 
 gulp.task('watch', function() {
-    gulp.watch(['minCParser/src/**/*.js'], ['parser', 'parserTest']);
-    gulp.watch(['minCLexer/**/*.js', 'grammar.js'], ['lexerTest']);
+    gulp.watch(['minCParser/**/*.js'], ['parser']);
+    gulp.watch(['minCLexer/**/*.js'], ['lexerTest']);
 });
 
 gulp.task('default', ['parser']);

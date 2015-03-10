@@ -1,5 +1,5 @@
 (function () {
-    var validate = require('./validate-tokens.js');
+    var validate = require('../validate-tokens.js');
     function functionsToString(functions) {
         var result = Object.keys(validate).map(function(v) {
             return String(validate[v]);
@@ -64,6 +64,7 @@
             [";",                       "return 'SEMICLN'"],
 
             ["\\s+", "/* skip spaces */"],
+            ["$", "return 'EOF'"],
             [".", function() {
                 if (this.matched === '"') {
                     // consume rest of characters
