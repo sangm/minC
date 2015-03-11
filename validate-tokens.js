@@ -3,9 +3,9 @@
         validateNumber: function validateNumber(number, location) {
             var regexPattern = /^[1-9]\d*/;
             return (regexPattern.test(number) || number === '0') 
-                ? 'INTCONST' : validateInvalidToken(number, location);
+                ? 'INTCONST' : this.invalidToken(number, location);
         },
-        invalidToken: function validateInvalidToken(string, location) {
+        invalidToken: function invalidToken(string, location) {
             if (location == null) {
                 return "Location cannot be null";
             }
@@ -14,7 +14,7 @@
             var generateError = function generateError() {
                 return "(" + line + "," + col + ")";
             };
-            if (string[0] === "'") {
+            if (string[0] === "'") 
                 return "Unclosed quote on character " + generateError();
             }
             else if (string[0] === '"') {
@@ -28,7 +28,7 @@
             }
             return {ILLEGAL_TOK: string + ' ' + generateError()}
         },
-        string: function validateString(string, location) {
+        validateString: function validateString(string, location) {
             string = string.replace("\\t", "\t")
                            .replace("\\n", "\n")
                            .replace('\\"', "\"")
@@ -36,7 +36,7 @@
             var result = string.substring(1, string.length-1);
             if (string[0] === "'") {
                 if (result.length > 1)
-                    return validateInvalidToken(string, location);
+                    return this.invalidToken(string, location);
                 return {CHARCONST: result.replace("\\'", "\'")};
             }
             else {
