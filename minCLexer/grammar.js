@@ -73,7 +73,6 @@
 
 
         ],
-
         options: {flex: true}
     };
     module.exports = grammar;
