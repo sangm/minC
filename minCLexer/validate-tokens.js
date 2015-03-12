@@ -1,11 +1,11 @@
 (function () {
-    Validate = {
-        validateNumber: function validateNumber(number, location) {
+    module.exports = {
+        validateNumber: function(number, location) {
             var regexPattern = /^[1-9]\d*/;
             return (regexPattern.test(number) || number === '0') 
                 ? {INTCONST: parseInt(number)} : validateInvalidToken(number, location);
         },
-        invalidToken: function validateInvalidToken(string, location) {
+        invalidToken: function(string, location) {
             if (location == null) {
                 return "Location cannot be null";
             }
@@ -28,7 +28,7 @@
             }
             return {ILLEGAL_TOK: string + ' ' + generateError()}
         },
-        string: function validateString(string, location) {
+        string: function(string, location) {
             string = string.replace("\\t", "\t")
                            .replace("\\n", "\n")
                            .replace('\\"', "\"")
@@ -44,6 +44,5 @@
             }
         }
     }
-    module.exports = Validate;
 })();
     
