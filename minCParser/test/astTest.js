@@ -116,6 +116,9 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             expect(varDeclY.children[0].terminal.data).to.equal('char');
             expect(varDeclX.children[1].terminal.data).to.equal('x');
             expect(varDeclY.children[1].terminal.data).to.equal('y');
+        }),
+        it('void foo(int x, char y, void foo) { string zzz; void bar;}', () => {
+            let ast = Parser.parse("void foo(int x, char y, void foo) { string zzz; void bar;}");
         })
     })
 });

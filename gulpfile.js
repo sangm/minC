@@ -24,13 +24,22 @@ gulp.task('parserTest', ['parser'], function() {
                    console.trace(err);
                })
 });
+gulp.task('astTest', ['parser'], function () {
+    return gulp.src('minCParser/test/astTest.js')
+               .pipe(babel())
+               .pipe(mocha({ reporter: 'spec'}))
+               .on('error', function(err) {
+                   console.trace(err);
+               })
+});
 gulp.task('lexerTest', function() {
     return gulp.src('minCLexer/test/*Test.js', {read: false})
                .pipe(mocha())
 });
 
 gulp.task('watch', function() {
-    gulp.watch(['minCParser/**/*.js'], ['parser']);
+    gulp.watch(['minCParser/**/*.js', 'minCParser/**/*.jison'], ['parser', 'astTest']);
+//    gulp.watch(['minCParser/**/*.js', 'minCParser/**/*.jison'], ['parser', 'parserTest']);
     gulp.watch(['minCLexer/**/*.js'], ['lexerTest']);
 });
 
