@@ -1,12 +1,14 @@
 'use strict'; 
 
 (function () {
-    var minCLexer = require('jison-lex');
-    
+    var Lexer = require('jison-lex');
     var grammar = require('./grammar.js');
-
-    
-    
-    module.exports = new minCLexer(grammar);
+    var minCLexer = Lexer(grammar);
+    minCLexer.object = function(value) {
+        var result = {}
+        result[value] = this.yytext;
+        return result;
+    }
+    module.exports = minCLexer;
 })()
 
