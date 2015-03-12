@@ -5,6 +5,7 @@ export default {
     funcDecl: 'FUNCDECL',
     funBody: 'FUNCBODY',
     localDeclList: 'LOCALDECLLIST',
+    statementList: 'STATEMENTLIST',
     TYPE: 'TYPE',
     ID: 'ID',
     INT: 'INT',
