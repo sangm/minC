@@ -64,10 +64,10 @@ IDENTIFIER [a-zA-Z][a-zA-Z0-9]*
 program
     : declList EOF
         {
-            $$ = new NonterminalNode(ParserConstants.PROGRAM, $1, @1);
+            $$ = new NonterminalNode(ParserConstants.Program, $1, @1);
             return $$;
         }
-    | EOF { return new NonterminalNode(ParserConstants.PROGRAM); }
+    | EOF { return new NonterminalNode(ParserConstants.Program); }
     ;
   
 declList 
@@ -109,7 +109,8 @@ funcDecl
     | typeSpecifier ID LPAREN RPAREN funBody
         {
             $1.terminal.data = 'function ' + $1.terminal.data + $3 + $4;
-            $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $5], @0)
+            var id = new TerminalNode(ParserConstants.ID, $2, @2);
+            $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, id, $5], @0)
         }
     ;
 
@@ -132,20 +133,34 @@ funBody
     
 localDeclList
     : 
+        {
+            $$ = new NonterminalNode(ParserConstants.localDeclList, null, @1);
+        } 
     | localDeclList varDecl
         {
             if ($$ == undefined) {
                 $$ = new NonterminalNode(ParserConstants.localDeclList, $2, @1);
             }
             else {
-                $$.children.push($2);
+                $$.addChild($2);
             }
         }
     ;
 
 statementList
     :
-    | statement statementList 
+        {
+            $$ = new NonterminalNode(ParserConstants.statementList, null, @1);
+        }
+    | statementList statement
+        {
+            if ($$ == undefined) {
+                $$ = new NonterminalNode(ParserConstants.statementList, $2, @1);
+            }
+            else {
+                $$.addChild($2);
+            }
+        } 
     ;
     
 statement
@@ -158,6 +173,9 @@ statement
     
 compoundStmt
     : LCRLY_BR statementList RCRLY_BR
+        {
+            $$ = new NonterminalNode(ParserConstants.compoundStmt, $2, @2);
+        }
     ;
     
 assignStmt
@@ -241,21 +259,11 @@ argList
 
 var appRoot = require('app-root-path');
 var ParserConstants = require(appRoot + '/minCParser/ParserConstants.js');
+var Tree = require(appRoot + '/minCParser/src/tree.js');
 var valid = require(appRoot + '/validate-tokens.js');
-function NonterminalNode(type, children, loc) {
-    // convert children to array if not here..
-    this.children = children || [];
-    if (this.children.constructor !== Array) 
-        this.children = [this.children];
-    this.type = type;
-    
-    this.addChild = function(child) {
-        this.children.push(child);
-    };
-}
-function TerminalNode(type, data, loc) {
-    this.terminal = {type: type, data: data, loc: loc};
-}
+
+var TerminalNode = Tree.TerminalNode;
+var NonterminalNode = Tree.NonterminalNode;
 
 function log(obj) {
     console.log(JSON.stringify(obj, null, 2));

@@ -1,6 +1,6 @@
 import {expect} from 'chai'
 import ParserConstants from '../ParserConstants'
-import {Node} from '../src/tree'
+import {NonterminalNode, TerminalNode, Node} from '../src/tree'
 import Parser from '../src/minCParser'
 
 let log = (obj) => {
@@ -10,17 +10,19 @@ let log = (obj) => {
 describe('Abstrct Syntax Tree from minCParser', () => {
     it('ProgramNode should be at the top of an empty program with 0 children', () => {
         let ast = Parser.parse(''); // empty program should generate a program node
-        expect(ast.type).to.equal(ParserConstants.PROGRAM);
+        expect(ast.type).to.equal(ParserConstants.Program);
         expect(ast.children.length).to.equal(0);
     }),
     describe('program -> decl -> vardecl -> typeSpecifier ID SEMICLN', () => {
         it('int x;', () => {
             let ast = Parser.parse('int x;');
+
             expect(ast.children[0].type).to.equal(ParserConstants.varDecl);
             expect(ast.children[0].children[0].terminal.type).to.equal(ParserConstants.typeSpecifier);
             expect(ast.children[0].children[0].terminal.data).to.equal('int');
             expect(ast.children[0].children[1].terminal.type).to.equal(ParserConstants.ID);
             expect(ast.children[0].children[1].terminal.data).to.equal('x');
+            
         }),
         it('char y;', () => {
             let ast = Parser.parse('char y;');
@@ -87,9 +89,11 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             expect(ast.children[0].type).to.equal(ParserConstants.funcDecl);
             expect(ast.children[0].children[0].terminal.type).to.equal(ParserConstants.typeSpecifier);
             expect(ast.children[0].children[0].terminal.data).to.equal('function int()');
-            expect(ast.children[0].children[1].type).to.equal(ParserConstants.funBody);
-            expect(ast.children[0].children[1].children[0]).to.be.undefined;
-            expect(ast.children[0].children[1].children[1]).to.be.undefined;
+            expect(ast.children[0].children[1].terminal.type).to.equal(ParserConstants.ID);
+            expect(ast.children[0].children[1].terminal.data).to.equal('foo');
+            expect(ast.children[0].children[2].type).to.equal(ParserConstants.funBody);
+            expect(ast.children[0].children[2].children[0].children.length).to.equal(0);
+            expect(ast.children[0].children[2].children[1].children.length).to.equal(0);
         }),
         it('char foo() {}', () => {
             let ast = Parser.parse('char foo() {}');
@@ -103,13 +107,21 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             let ast = Parser.parse('string foo() {}');
             expect(ast.children[0].children[0].terminal.data).to.equal('function string()');
         }),
-        it('int foo() { int x; int y;} ', () => {
+        it("(localDeclList) int foo() { int x; int y;} ", () => {
             let ast = Parser.parse('int foo() { int x; char y;}');
-            let funcBody = ast.children[0].children[1];
+            let funcDecl = ast.children[0];
+            let funcBody = ast.children[0].children[2];
             let localDeclList = funcBody.children[0];
             let varDeclX = localDeclList.children[0];
             let varDeclY = localDeclList.children[1];
+
+            expect(funcDecl.children[0].terminal.type).to.equal(ParserConstants.typeSpecifier);
+            expect(funcDecl.children[1].terminal.type).to.equal(ParserConstants.ID);
+            expect(funcDecl.children[2].type).to.equal(ParserConstants.funBody);
             expect(localDeclList.type).to.equal(ParserConstants.localDeclList);
+            
+            expect(ast.children[0].children[1].terminal.type).to.equal(ParserConstants.ID);
+            expect(ast.children[0].children[1].terminal.data).to.equal('foo');
             expect(localDeclList.children[0].type).to.equal(ParserConstants.varDecl);
             expect(localDeclList.children[1].type).to.equal(ParserConstants.varDecl);
             expect(varDeclX.children[0].terminal.data).to.equal('int');
@@ -117,8 +129,26 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             expect(varDeclX.children[1].terminal.data).to.equal('x');
             expect(varDeclY.children[1].terminal.data).to.equal('y');
         }),
-        it('void foo(int x, char y, void foo) { string zzz; void bar;}', () => {
-            let ast = Parser.parse("void foo(int x, char y, void foo) { string zzz; void bar;}");
+        it("(statementList compoundStmt) void foo() { { } { x = 2; } }", () => {
+            let ast = Parser.parse("void foo() { { } }");
+            let funcBody = ast.children[0].children[2];
+            expect(funcBody.type).to.equal(ParserConstants.funBody);
+            expect(funcBody.children[1].type).to.equal(ParserConstants.statementList);
+                
+            log(ast);
+            (Node.getChildren(ast, ParserConstants.Program, 1))
+            // Node.getChild(ast, ParserConstants.funBody);
+        //    log(ast.children[0].children[1]);
+        })
+    }),
+    describe("Node functions", () => {
+        it("should return right nodes", () => {
+            let ast = Parser.parse("void foo() { { } }");
+            let node = Node.getChildren(ast, ParserConstants.Program, 0);
+
+            expect(Node.getChildren(ast, 0).type).to.equal(ParserConstants.Program);
+            expect(Node.getChildren(ast, 1).type).to.equal(ParserConstants.funcDecl);
+
         })
     })
 });
