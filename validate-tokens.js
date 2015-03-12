@@ -14,11 +14,11 @@
             var generateError = function generateError() {
                 return "(" + line + "," + col + ")";
             };
-            if (string[0] === "'") 
+            if (string[0] === "'") {
                 return "Unclosed quote on character " + generateError();
             }
             else if (string[0] === '"') {
-                return "Unterminated string " + generateError();
+                return "Unterminated string" + generateError();
             }
             else if (string[0] === '/') {
                 return "Unterminated comment " + generateError();
