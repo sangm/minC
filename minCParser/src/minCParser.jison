@@ -134,25 +134,32 @@ assignStmt
 condStmt
     : KWD_IF LPAREN expression RPAREN statement %prec IF_WITHOUT_ELSE
         {
-            $$ = new NonterminalNode(ParserConstants.condStmt, [$3, $5], @1);
+            $1 = new NonterminalNode(ParserConstants.kwdIf, [$3, $5]);
+            $$ = new NonterminalNode(ParserConstants.condStmt, $1, @1);
         }
     | KWD_IF LPAREN expression RPAREN statement KWD_ELSE statement
+        {
+            $1 = new NonterminalNode(ParserConstants.kwdIf, [$3, $5], @1);
+            $6 = new NonterminalNode(ParserConstants.kwdElse, $7, @6)
+            $$ = new NonterminalNode(ParserConstants.condStmt, [$1, $6], @1);
+        }
     ;
     
 loopStmt
     : KWD_WHILE LPAREN expression RPAREN statement
+        {
+            $1 = new NonterminalNode(ParserConstants.kwdWhile, [$3, $5]);
+            $$ = new NonterminalNode(ParserConstants.loopStmt, $1, @1);
+        }
     ;
     
 returnStmt
-    : KWD_RETURN SEMICLN
-    | KWD_RETURN expression SEMICLN
+    : KWD_RETURN SEMICLN { $$ = new TerminalNode(ParserConstants.kwdReturn, $2, @1); }
+    | KWD_RETURN expression SEMICLN { $$ = new NonterminalNode(ParserConstants.kwdReturn, $2); }
     ;
 
 var
-    : ID
-        {
-            $$ = new TerminalNode(ParserConstants.ID, $1, @1);
-        }
+    : ID { $$ = new TerminalNode(ParserConstants.ID, $1, @1); }
     | ID LSQ_BRKT addExpr RSQ_BRKT
         {
             var id = new TerminalNode(ParserConstants.ID, $1, @1);

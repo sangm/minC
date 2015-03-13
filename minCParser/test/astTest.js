@@ -16,6 +16,9 @@ let getSubChildren = (node, index, type) => {
     expect(node.children[index].type).to.equal(type);
     return node.children[index];
 }
+let printNode = (node) => {
+    
+}
 
 describe('Abstrct Syntax Tree from minCParser', () => {
     it('ProgramNode should be at the top of an empty program with 0 children', () => {
@@ -166,18 +169,65 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(divExpr.children[0], ParserConstants.ID, 'foo');
             terminalNodeTest(divExpr.children[1], ParserConstants.ID, 'bar');
         }),
-        it("(condStmt without else void foo() { if (x == 2) x = 5; } ", () => {
+        it("(condStmt without else) void foo() { if (x == 2) x = 5; } ", () => {
             let ast = Parser.parse("void foo() { if (x == 2) x = 5; }");
             let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
             let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
             let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
             let condStmt = getSubChildren(statementList, 0, ParserConstants.condStmt);
-            let equalStmt = getSubChildren(condStmt, 0, ParserConstants.eqOp);
-            let assignStmt = getSubChildren(condStmt, 1, ParserConstants.assignStmt);
+            let ifStmt = getSubChildren(condStmt, 0, ParserConstants.kwdIf);
+            let equalStmt = getSubChildren(ifStmt, 0, ParserConstants.eqOp);
+            let assignStmt = getSubChildren(ifStmt, 1, ParserConstants.assignStmt);
             terminalNodeTest(equalStmt.children[0], ParserConstants.ID, 'x');
             terminalNodeTest(equalStmt.children[1], ParserConstants.intConst, 2);
             terminalNodeTest(assignStmt.children[0], ParserConstants.ID, 'x')
             terminalNodeTest(assignStmt.children[1], ParserConstants.intConst, 5)
+        }),
+        it("(condStmt with else) void foo() { if (x == 2) y = 6; else y = 2; }", () => {
+            let ast = Parser.parse("void foo() { if (x == 2) y = 6; else y = 2; }")
+            let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
+            let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
+            let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
+            let condStmt = getSubChildren(statementList, 0, ParserConstants.condStmt);
+            let ifStmt = getSubChildren(condStmt, 0, ParserConstants.kwdIf);
+            let elseStmt = getSubChildren(condStmt, 1, ParserConstants.kwdElse);
+            let equalStmt = getSubChildren(ifStmt, 0, ParserConstants.eqOp);
+            let assignStmt = getSubChildren(ifStmt, 1, ParserConstants.assignStmt);
+            terminalNodeTest(equalStmt.children[0], ParserConstants.ID, 'x');
+            terminalNodeTest(equalStmt.children[1], ParserConstants.intConst, 2);
+            terminalNodeTest(assignStmt.children[0], ParserConstants.ID, 'y');
+            terminalNodeTest(assignStmt.children[1], ParserConstants.intConst, 6);
+            assignStmt = getSubChildren(elseStmt, 0, ParserConstants.assignStmt);
+            terminalNodeTest(assignStmt.children[0], ParserConstants.ID, 'y');
+            terminalNodeTest(assignStmt.children[1], ParserConstants.intConst, 2);
+        }),
+        it("(loopStmt) void foo() { while (x == 2) x = 1; }", () => {
+            let ast = Parser.parse("void foo() { while (x == 2) x = 1; }");
+            let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
+            let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
+            let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
+            let loopStmt = getSubChildren(statementList, 0, ParserConstants.loopStmt);
+            let whileLoop = getSubChildren(loopStmt, 0, ParserConstants.kwdWhile);
+            let equalStmt = getSubChildren(whileLoop, 0, ParserConstants.eqOp);
+            let assignStmt = getSubChildren(whileLoop, 1, ParserConstants.assignStmt);
+        }),
+        it("(return) void foo() { return; }", () => {
+            let ast = Parser.parse("void foo() { return; }")        
+            let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
+            let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
+            let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
+            terminalNodeTest(statementList.children[0], ParserConstants.kwdReturn, ';');
+        }),
+        it("(return expr) void foo {  return 2+2; }", () => {
+            let ast = Parser.parse("void foo() { return 2+4; }")        
+            let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
+            let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
+            let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
+            let returnStmt = getSubChildren(statementList, 0, ParserConstants.kwdReturn);
+            let addExpr = getSubChildren(returnStmt, 0, ParserConstants.addOp);
+            terminalNodeTest(addExpr.children[0], ParserConstants.intConst, 2);
+            terminalNodeTest(addExpr.children[1], ParserConstants.intConst, 4);
+            
         })
     }),
     describe("Node functions", () => {

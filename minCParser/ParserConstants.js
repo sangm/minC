@@ -10,6 +10,7 @@ export default {
     empty: 'EMPTY_STATEMENT',
     assignStmt: 'ASSIGNSTMT',
     expression: 'EXPRESSION',
+    loopStmt: 'LOOP_STMT',
     addExpr: 'ADD_EXPR',
     intConst: 'INTCONST',
     charConst: 'CHARCONST',
@@ -25,5 +26,9 @@ export default {
     subOp: 'OPER_SUB',
     mulOp: 'OPER_MUL',
     divOp: 'OPER_DIV',
+    kwdIf: 'KWD_IF',
+    kwdElse: 'KWD_ELSE',
+    kwdWhile: 'KWD_WHILE',
+    kwdReturn: 'KWD_RETURN',
     TYPE: 'TYPE',
     ID: 'ID',}; 
