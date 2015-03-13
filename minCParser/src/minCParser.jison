@@ -1,60 +1,3 @@
-/* lexical grammar */
-%lex
-
-IDENTIFIER [a-zA-Z][a-zA-Z0-9]*
-
-%options flex
-
-%%
-\/\*\s*                 %{ 
-                              var result;
-                              while((result = this.input()) != undefined) {
-                                  while (result === '*') {
-                                      result = this.input();
-                                      if (result == '/') {
-                                          return;
-                                      }
-                                 }
-                              }
-                              return validateInvalidToken(yytext, yylloc);
-                        %}
-(\"|\')((?:(?=(\\?))\3(?:.|\n))*?)\1  return validateString(yytext, yylloc); 
-\d+                       return 'INTCONST'
-
-"if"                      return 'KWD_IF';
-"else"                    return 'KWD_ELSE';
-"while"                   return 'KWD_WHILE';
-"int"                     return 'KWD_INT';
-"string"                  return 'KWD_STRING';
-"char"                    return 'KWD_CHAR';
-"return"                  return 'KWD_RETURN';
-"void"                    return 'KWD_VOID';
-"if"                      return 'KWD_IF';
-{IDENTIFIER}              return 'ID';
-"+"                       return 'OPER_ADD';
-"-"                       return 'OPER_SUB';
-"*"                       return 'OPER_MUL';
-"/"                       return 'OPER_DIV';
-">="                      return 'OPER_GTE';
-"=="                      return 'OPER_EQ';
-"!="                      return 'OPER_NEQ';
-"<="                      return 'OPER_LTE';
-"<"                       return 'OPER_LT';
-">"                       return 'OPER_GT';
-"="                       return 'OPER_ASG';
-"["                       return 'LSQ_BRKT';
-"]"                       return 'RSQ_BRKT';
-"{"                       return 'LCRLY_BR';
-"}"                       return 'RCRLY_BR';
-"("                       return 'LPAREN';
-")"                       return 'RPAREN';
-","                       return 'COMMA';
-";"                       return 'SEMICLN';
-\s+                       /* skip spaces */
-<<EOF>>                   return 'EOF';
-
-/lex
-
 %right IF_WITHOUT_ELSE KWD_ELSE
 
 %start program
@@ -125,7 +68,7 @@ formalDecl
     ;
     
 funBody
-    : LCRLY_BR localDeclList statementList RCRLY_BR
+    : LCRLY_BRKT localDeclList statementList RCRLY_BRKT
         {
             $$ = new NonterminalNode(ParserConstants.funBody, [$2, $3], @1);
         }
@@ -172,7 +115,7 @@ statement
     ;
     
 compoundStmt
-    : LCRLY_BR statementList RCRLY_BR
+    : LCRLY_BRKT statementList RCRLY_BRKT
         {
             $$ = new NonterminalNode(ParserConstants.compoundStmt, $2, @2);
         }
@@ -260,7 +203,6 @@ argList
 var appRoot = require('app-root-path');
 var ParserConstants = require(appRoot + '/minCParser/ParserConstants.js');
 var Tree = require(appRoot + '/minCParser/src/tree.js');
-var valid = require(appRoot + '/validate-tokens.js');
 
 var TerminalNode = Tree.TerminalNode;
 var NonterminalNode = Tree.NonterminalNode;
@@ -268,7 +210,3 @@ var NonterminalNode = Tree.NonterminalNode;
 function log(obj) {
     console.log(JSON.stringify(obj, null, 2));
 }
-
-parser.ast = {};
-parser.validateNumber = valid.validateNumber;
-parser.invalidToken = valid.invalidToken;
