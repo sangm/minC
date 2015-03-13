@@ -133,6 +133,9 @@ assignStmt
     
 condStmt
     : KWD_IF LPAREN expression RPAREN statement %prec IF_WITHOUT_ELSE
+        {
+            $$ = new NonterminalNode(ParserConstants.condStmt, [$3, $5], @1);
+        }
     | KWD_IF LPAREN expression RPAREN statement KWD_ELSE statement
     ;
     
@@ -160,40 +163,50 @@ var
 expression
     : addExpr
     | expression relop addExpr
+        {
+            $2.addChild($1);
+            $2.addChild($3);
+            $$ = $2;
+        }
     ;
 
 relop
-    : OPER_LTE
-    | OPER_LT
-    | OPER_GT
-    | OPER_GTE
-    | OPER_EQ
-    | OPER_NEQ
+    : OPER_LTE  { $$ = new NonterminalNode(ParserConstants.lteOp, [], @1); }
+    | OPER_LT  { $$ = new NonterminalNode(ParserConstants.ltOp, [], @1); }
+    | OPER_GT  { $$ = new NonterminalNode(ParserConstants.gtOp, [], @1); }
+    | OPER_GTE { $$ = new NonterminalNode(ParserConstants.gteOp, [], @1); }
+    | OPER_EQ  { $$ = new NonterminalNode(ParserConstants.eqOp, [], @1); }
+    | OPER_NEQ  { $$ = new NonterminalNode(ParserConstants.neqOp, [], @1); }
     ;
 
 addExpr
     : term
-        {
-        }
     | addExpr addop term
         {
-            $$ = new NonterminalNode(ParserConstants.addExpr, [$1, $2, $3], @1);
+            $2.addChild($1);
+            $2.addChild($3);
+            $$ = $2;
         }
     ;
 
 addop
-    : OPER_ADD { $$ = new TerminalNode(ParserConstants.addOp, $1, @1); }
-    | OPER_SUB { $$ = new TerminalNode(ParserConstants.subOp, $1, @1); }
+    : OPER_ADD { $$ = new NonterminalNode(ParserConstants.addOp, [], @1); }
+    | OPER_SUB { $$ = new NonterminalNode(ParserConstants.subOp, [], @1); }
     ;
 
 term
     : factor
     | term mulop factor
+        {
+            $2.addChild($1);
+            $2.addChild($3);
+            $$ = $2;
+        }
     ;
 
 mulop
-    : OPER_MUL
-    | OPER_DIV
+    : OPER_MUL { $$ = new NonterminalNode(ParserConstants.mulOp, [], @1); }
+    | OPER_DIV{ $$ = new NonterminalNode(ParserConstants.divOp, [], @1); }
     ;
 
 factor

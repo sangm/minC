@@ -128,18 +128,19 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             expect(funcBody.children[1].children[0].children[0].type).to.equal(ParserConstants.statementList);
         }),
         it("(statementList assignStmt) void foo() { x = 2 + 4; y = '6'; }", () => {
-            let ast = Parser.parse("void foo() { x = 2 + 4; y = '6'; z[2] = 10 - 5;} ");
+            let ast = Parser.parse("void foo() { x = 2 + 4; y = '6'; z[2] = 10 - 5; f = 20 * 1; k = foo / bar;} ");
             let statementList = ast.children[0].children[2].children[1];
             let assignStmtX = getSubChildren(statementList, 0, ParserConstants.assignStmt); // x = 2 + 4;
-            let assignStmtY = getSubChildren(statementList, 1, ParserConstants.assignStmt); // x = 2 + 4;
-            let assignStmtZ = getSubChildren(statementList, 2, ParserConstants.assignStmt); // x = 2 + 4;
+            let assignStmtY = getSubChildren(statementList, 1, ParserConstants.assignStmt); // y = '6';
+            let assignStmtZ = getSubChildren(statementList, 2, ParserConstants.assignStmt); // z[2] = 10;
+            let assignStmtF = getSubChildren(statementList, 3, ParserConstants.assignStmt); // f = 20 * 1;
+            let assignStmtK = getSubChildren(statementList, 4, ParserConstants.assignStmt); // k = foo / bar;
             
             /* x = 2 + 4 */
             terminalNodeTest(assignStmtX.children[0], ParserConstants.ID, 'x');
-            let addExprX = getSubChildren(assignStmtX, 1, ParserConstants.addExpr);
+            let addExprX = getSubChildren(assignStmtX, 1, ParserConstants.addOp);
             terminalNodeTest(addExprX.children[0], ParserConstants.intConst, 2);
-            terminalNodeTest(addExprX.children[1], ParserConstants.addOp, '+');
-            terminalNodeTest(addExprX.children[2], ParserConstants.intConst, 4);
+            terminalNodeTest(addExprX.children[1], ParserConstants.intConst, 4);
             
             /* y = '6' */
             terminalNodeTest(assignStmtY.children[0], ParserConstants.ID, 'y');
@@ -149,15 +150,35 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             let arrayDecl = getSubChildren(assignStmtZ, 0, ParserConstants.arrayDecl);
             terminalNodeTest(arrayDecl.children[0], ParserConstants.ID, 'z');
             terminalNodeTest(arrayDecl.children[1], ParserConstants.intConst, 2);
-
-            let addExprZ = getSubChildren(assignStmtZ, 1, ParserConstants.addExpr);
+            let addExprZ = getSubChildren(assignStmtZ, 1, ParserConstants.subOp);
             terminalNodeTest(addExprZ.children[0], ParserConstants.intConst, 10);
-            terminalNodeTest(addExprZ.children[1], ParserConstants.subOp, '-');
-            terminalNodeTest(addExprZ.children[2], ParserConstants.intConst, 5);
-        }),
-        it("array declartion with addexpr within the brackets", () => {
-        })
+            terminalNodeTest(addExprZ.children[1], ParserConstants.intConst, 5);
+            
+            /* f = 20 * 1; */
+            let multExpr = getSubChildren(assignStmtF, 1, ParserConstants.mulOp);
+            terminalNodeTest(assignStmtF.children[0], ParserConstants.ID, 'f');
+            terminalNodeTest(multExpr.children[0], ParserConstants.intConst, 20);
+            terminalNodeTest(multExpr.children[1], ParserConstants.intConst, 1);
 
+            /* k = foo / bar; */
+            let divExpr = getSubChildren(assignStmtK, 1, ParserConstants.divOp);
+            terminalNodeTest(assignStmtK.children[0], ParserConstants.ID, 'k');
+            terminalNodeTest(divExpr.children[0], ParserConstants.ID, 'foo');
+            terminalNodeTest(divExpr.children[1], ParserConstants.ID, 'bar');
+        }),
+        it("(condStmt without else void foo() { if (x == 2) x = 5; } ", () => {
+            let ast = Parser.parse("void foo() { if (x == 2) x = 5; }");
+            let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
+            let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
+            let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
+            let condStmt = getSubChildren(statementList, 0, ParserConstants.condStmt);
+            let equalStmt = getSubChildren(condStmt, 0, ParserConstants.eqOp);
+            let assignStmt = getSubChildren(condStmt, 1, ParserConstants.assignStmt);
+            terminalNodeTest(equalStmt.children[0], ParserConstants.ID, 'x');
+            terminalNodeTest(equalStmt.children[1], ParserConstants.intConst, 2);
+            terminalNodeTest(assignStmt.children[0], ParserConstants.ID, 'x')
+            terminalNodeTest(assignStmt.children[1], ParserConstants.intConst, 5)
+        })
     }),
     describe("Node functions", () => {
         it("should return right nodes", () => {
