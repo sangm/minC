@@ -132,7 +132,6 @@ describe('minimal C lexer', function() {
         it('should handle escape characters', function() {
             var lex = minCLexer.setInput('"abc\n123"');
             var tokens = getTokens(lex);
-            console.log(tokens)
             assert.deepEqual(tokens[0], {STRCONST: "abc\n123"});
         }),
         it('should detect unterminated string', function() {
@@ -145,7 +144,7 @@ describe('minimal C lexer', function() {
             assert.deepEqual({ID: "integer"}, tokens[0]);
         }),
         it('should store escape characters correctly', function() {
-            var lex = minCLexer.setInput('"\"abc\n123"');
+            var lex = minCLexer.setInput('"\\"abc\n123"');
             var tokens = getTokens(lex);
             assert.equal(tokens[0].STRCONST.length, 8);
         }),

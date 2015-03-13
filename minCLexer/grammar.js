@@ -77,7 +77,7 @@
             ["$", "return 'EOF'"],
             [".", function() {
                 if (this.match === '"') 
-                    while(this.input()) // consume rest of characters
+                    while(this.input()); // consume rest of characters
                 return invalidToken(yytext, yylloc);
             }],
         ],
