@@ -87,31 +87,33 @@ formalDecl
 funBody
     : LCRLY_BRKT localDeclList statementList RCRLY_BRKT
         {
+            if ($2 == null)
+                $2 = new TerminalNode(ParserConstants.localDeclList, ParserConstants.empty, @1);
+            if ($3 == null)
+                $3 = new TerminalNode(ParserConstants.statementList, ParserConstants.empty, @1);
             $$ = new NonterminalNode(ParserConstants.funBody, [$2, $3], @1);
         }
     ;
     
 localDeclList
-    : 
-        {
-            $$ = new NonterminalNode(ParserConstants.localDeclList, null, @1);
-        } 
-    | localDeclList varDecl { $1.addChild($2); }
+    :  
+    | localDeclList varDecl 
+        { 
+            if ($1 == null)
+                $$ = new NonterminalNode(ParserConstants.localDeclList, $2, @1);
+            else
+                $1.addChild($2);
+        }
     ;
 
 statementList
     :
-        {
-            $$ = new NonterminalNode(ParserConstants.statementList, null, @1);
-        }
-    | statementList statement
-        {
-            if ($$ == undefined) {
-                $$ = new NonterminalNode(ParserConstants.statementList, $2, @1);
-            }
-            else {
-                $$.addChild($2);
-            }
+    | statementList statement 
+        { 
+            if ($1 == null)
+                $$ = new NonterminalNode(ParserConstants.statementList, $2, @1); 
+            else 
+                $1.addChild($2);
         } 
     ;
     
@@ -126,7 +128,10 @@ statement
 compoundStmt
     : LCRLY_BRKT statementList RCRLY_BRKT
         {
-            $$ = new NonterminalNode(ParserConstants.compoundStmt, $2, @2);
+            if ($2 == null)
+                $$ = new TerminalNode(ParserConstants.compoundStmt, ParserConstants.empty, @1);
+            else
+                $$ = new NonterminalNode(ParserConstants.compoundStmt, $2, @2);
         }
     ;
     
