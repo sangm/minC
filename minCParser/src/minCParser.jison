@@ -1,6 +1,8 @@
 /* lexical grammar */
 %lex
 
+var f = require('fs');
+
 IDENTIFIER [a-zA-Z][a-zA-Z0-9]*
 
 %options flex
@@ -18,9 +20,12 @@ IDENTIFIER [a-zA-Z][a-zA-Z0-9]*
                               }
                               return validateInvalidToken(yytext, yylloc);
                         %}
-(\"|\')((?:(?=(\\?))\3(?:.|\n))*?)\1  return validateString(yytext, yylloc); 
-\d+                       return 'INTCONST'
-
+(\"|\')((?:(?=(\\?))\3(?:.|\n))*?)\1  
+                          %{
+                              return parser.validateString(yytext, yylloc);
+                              return 'STRCONST';
+                          %}
+\d+                       return parser.validateNumber(yytext, yylloc); 
 "if"                      return 'KWD_IF';
 "else"                    return 'KWD_ELSE';
 "while"                   return 'KWD_WHILE';
@@ -179,8 +184,14 @@ compoundStmt
     ;
     
 assignStmt
-    : var OPER_ASG expression SEMICLN
+    : var OPER_ASG expression SEMICLN 
+        {
+            $$ = new NonterminalNode(ParserConstants.assignStmt, [$1, $3], @1);
+        }
     | expression SEMICLN
+        {
+            $$ = new NonterminalNode(ParserConstants.assignStmt, $1, @1);
+        }
     ;
     
 condStmt
@@ -199,12 +210,21 @@ returnStmt
 
 var
     : ID
+        {
+            $$ = new TerminalNode(ParserConstants.ID, $1, @1);
+        }
     | ID LSQ_BRKT addExpr RSQ_BRKT
     ;
     
 expression
     : addExpr
+        {
+            $$ = new NonterminalNode(ParserConstants.expression, $1, @1);
+        }
     | expression relop addExpr
+        {
+            
+        }
     ;
 
 relop
@@ -218,11 +238,20 @@ relop
 
 addExpr
     : term
+        {
+            $$ = new NonterminalNode(ParserConstants.addExpr, $1, @1);
+            log($$);
+        }
     | addExpr addop term
+        {
+        }
     ;
 
 addop
-    : OPER_ADD
+    : OPER_ADD 
+        {
+
+        }
     | OPER_SUB
     ;
 
@@ -240,7 +269,11 @@ factor
     : LPAREN expression RPAREN
     | var
     | funcCallExpr
-    | INTCONST
+    | INTCONST 
+        {
+            console.log(parser.validateNumber('01', @1));
+            $$ = new TerminalNode(ParserConstants.intConst, $1, @1);
+        }
     | CHARCONST
     | STRCONST
     ;
@@ -254,7 +287,7 @@ argList
     : expression
     | argList COMMA expression
     ;
-    
+
 %%
 
 var appRoot = require('app-root-path');
@@ -272,3 +305,4 @@ function log(obj) {
 parser.ast = {};
 parser.validateNumber = valid.validateNumber;
 parser.invalidToken = valid.invalidToken;
+parser.validateString = valid.validateString;

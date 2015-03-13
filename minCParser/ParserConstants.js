@@ -7,8 +7,10 @@ export default {
     localDeclList: 'LOCALDECLLIST',
     statementList: 'STATEMENTLIST',
     compoundStmt: 'COMPOUNDSTATEMENT',
+    assignStmt: 'ASSIGNSTMT',
+    expression: 'EXPRESSION',
+    addExpr: 'ADD_EXPR',
+    intConst: 'INTCONST',
     TYPE: 'TYPE',
     ID: 'ID',
-    INT: 'INT',
-    INTCONST: 'INTCONST'
 }; 

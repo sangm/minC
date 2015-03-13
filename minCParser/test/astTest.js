@@ -129,16 +129,42 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             expect(varDeclX.children[1].terminal.data).to.equal('x');
             expect(varDeclY.children[1].terminal.data).to.equal('y');
         }),
-        it("(statementList compoundStmt) void foo() { { } { x = 2; } }", () => {
+        it("(statementList compoundStmt) void foo() { { } }", () => {
             let ast = Parser.parse("void foo() { { } }");
             let funcBody = ast.children[0].children[2];
             expect(funcBody.type).to.equal(ParserConstants.funBody);
             expect(funcBody.children[1].type).to.equal(ParserConstants.statementList);
-                
-            log(ast);
-            (Node.getChildren(ast, ParserConstants.Program, 1))
-            // Node.getChild(ast, ParserConstants.funBody);
-        //    log(ast.children[0].children[1]);
+            expect(funcBody.children[1].children[0].type).to.equal(ParserConstants.compoundStmt);
+            expect(funcBody.children[1].children[0].children[0].type).to.equal(ParserConstants.statementList);
+        }),
+        it("(statementList assignStmt) void foo() { x = 2; }", () => {
+            let ast = Parser.parse("void foo() { x = 02 + 4; y = '6'; }");
+            let statementList = ast.children[0].children[2].children[1];
+            let assignStmtX = statementList.children[0]; // x = 2 + 4;
+            let assignStmtY = statementList.children[1]; // y = 2;
+            let addExprX = assignStmtX.children[1].children[0];
+            let addExprY = assignStmtY.children[1].children[0];
+            
+            expect(assignStmtX.type).to.equal(ParserConstants.assignStmt);
+            expect(assignStmtX.children[0].terminal.type).to.equal(ParserConstants.ID);
+            expect(assignStmtX.children[0].terminal.data).to.equal('x');
+            expect(assignStmtX.children[1].type).to.equal(ParserConstants.expression);
+            expect(addExprX.type).to.equal(ParserConstants.addExpr);
+            expect(addExprX.children.length).to.equal(2);
+            expect(addExprX.children[0].terminal.type).to.equal(ParserConstants.intConst);
+            expect(addExprX.children[1].terminal.type).to.equal(ParserConstants.intConst);
+            expect(addExprX.children[0].terminal.data).to.equal(2);
+            expect(addExprX.children[1].terminal.data).to.equal(4);
+
+            expect(assignStmtY.type).to.equal(ParserConstants.assignStmt);
+            expect(assignStmtY.children[0].terminal.type).to.equal(ParserConstants.ID);
+            expect(assignStmtY.children[0].terminal.data).to.equal('y');
+            expect(addExprY.children.length).to.equal(1);
+            expect(addExprY.children[0].terminal.type).to.equal(ParserConstants.charConst);
+            expect(addExprY.children[0].terminal.data).to.equal("'6'");
+
+            //expect(assignStmt.children[1].type).to.equal(ParserConstants.expression);
+            // expect(assignStmt.children[1].children[0].type).to.equal(ParserConstants.addExpr);
         })
     }),
     describe("Node functions", () => {
@@ -146,8 +172,8 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             let ast = Parser.parse("void foo() { { } }");
             let node = Node.getChildren(ast, ParserConstants.Program, 0);
 
-            expect(Node.getChildren(ast, 0).type).to.equal(ParserConstants.Program);
-            expect(Node.getChildren(ast, 1).type).to.equal(ParserConstants.funcDecl);
+//            expect(Node.getChildren(ast, 0).type).to.equal(ParserConstants.Program);
+//           expect(Node.getChildren(ast, 1).type).to.equal(ParserConstants.funcDecl);
 
         })
     })

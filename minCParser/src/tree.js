@@ -1,10 +1,16 @@
 class TerminalNode {
     constructor(type, data, loc) {
+        if (type == null) {
+            type = "needs to be defined in parserConstants";
+        }
        this.terminal = {type: type, data: data, loc: loc} 
     }
 }
 class NonterminalNode {
     constructor(type, children, loc) {
+        if (type == null) {
+            type = "needs to be defined in parserConstants";
+        }
         this.children = children || [];
         if (this.children.constructor !== Array) 
             this.children = [this.children];
