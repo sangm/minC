@@ -8,8 +8,15 @@ var Parser = require("jison").Parser;
 
 var ParserConstants = _interopRequire(require("../ParserConstants"));
 
+var appRoot = _interopRequire(require("app-root-path"));
+
+var minCLexer = _interopRequire(require("../../minCLexer/minCLexer"));
+
 var Node = require("./tree").Node;
 
 // `grammar` can also be a string that uses jison's grammar format
 var bnf = fs.readFileSync(__dirname + "/../src/minCParser.jison", "utf8");
-module.exports = new Parser(bnf);
+var minCParser = new Parser(bnf);
+minCParser.lexer = minCLexer;
+
+module.exports = minCParser;

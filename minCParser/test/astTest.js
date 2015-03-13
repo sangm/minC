@@ -138,7 +138,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             expect(funcBody.children[1].children[0].children[0].type).to.equal(ParserConstants.statementList);
         }),
         it("(statementList assignStmt) void foo() { x = 2; }", () => {
-            let ast = Parser.parse("void foo() { x = 02 + 4; y = '6'; }");
+            let ast = Parser.parse("void foo() { x = 2 + 4; y = '6'; }");
             let statementList = ast.children[0].children[2].children[1];
             let assignStmtX = statementList.children[0]; // x = 2 + 4;
             let assignStmtY = statementList.children[1]; // y = 2;
