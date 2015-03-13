@@ -49,6 +49,9 @@ typeSpecifier
     
 funcDecl
     : typeSpecifier ID LPAREN formalDeclList RPAREN funBody
+        {
+            $$ = new NonterminalNode(ParserConstants.funcDecl, [$4, $6], @1);
+        }
     | typeSpecifier ID LPAREN RPAREN funBody
         {
             var id = new TerminalNode(ParserConstants.ID, $2, @2);
@@ -57,13 +60,28 @@ funcDecl
     ;
 
 formalDeclList
-    : formalDecl
-    | formalDecl COMMA formalDeclList
+    : formalDecl 
+        {
+            $$ = new NonterminalNode(ParserConstants.formalDeclList, $1, @1);
+        }
+    | formalDeclList COMMA formalDecl
+        {
+            $1.addChild($3);
+        }
     ;
 
 formalDecl
-    : typeSpecifier ID
+    : typeSpecifier ID 
+        {
+            var id = new TerminalNode(ParserConstants.ID, $2, @2);
+            $$ = new NonterminalNode(ParserConstants.formalDecl, [$1, id]);
+        }
     | typeSpecifier ID LSQ_BRKT RSQ_BRKT
+        {
+            $2 = new TerminalNode(ParserConstants.ID, $2, @2);
+            var array = new NonterminalNode(ParserConstants.arrayDecl, [$1, $2], @1);
+            $$ = new NonterminalNode(ParserConstants.formalDecl, array);
+        }
     ;
     
 funBody
@@ -78,15 +96,7 @@ localDeclList
         {
             $$ = new NonterminalNode(ParserConstants.localDeclList, null, @1);
         } 
-    | localDeclList varDecl
-        {
-            if ($$ == undefined) {
-                $$ = new NonterminalNode(ParserConstants.localDeclList, $2, @1);
-            }
-            else {
-                $$.addChild($2);
-            }
-        }
+    | localDeclList varDecl { $1.addChild($2); }
     ;
 
 statementList

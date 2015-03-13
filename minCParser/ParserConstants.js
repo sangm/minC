@@ -30,5 +30,7 @@ export default {
     kwdElse: 'KWD_ELSE',
     kwdWhile: 'KWD_WHILE',
     kwdReturn: 'KWD_RETURN',
+    formalDeclList: 'FORMAL_DECL_LIST',
+    formalDecl: 'FORMAL_DECL',
     TYPE: 'TYPE',
     ID: 'ID',}; 

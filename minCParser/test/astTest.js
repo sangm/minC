@@ -218,7 +218,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
             terminalNodeTest(statementList.children[0], ParserConstants.kwdReturn, ';');
         }),
-        it("(return expr) void foo {  return 2+2; }", () => {
+        it("(return expr) void foo() {  return 2+2; }", () => {
             let ast = Parser.parse("void foo() { return 2+4; }")        
             let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
             let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -227,14 +227,51 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             let addExpr = getSubChildren(returnStmt, 0, ParserConstants.addOp);
             terminalNodeTest(addExpr.children[0], ParserConstants.intConst, 2);
             terminalNodeTest(addExpr.children[1], ParserConstants.intConst, 4);
-            
+        }),
+        it("void foo() { foo[2+2] = 2;}", () => {
+            let ast = Parser.parse("void foo() { foo[2+4] = 8; }");
+            let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
+            let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
+            let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
+            let assignStmt = getSubChildren(statementList, 0, ParserConstants.assignStmt);
+            let arrayDecl = getSubChildren(assignStmt, 0, ParserConstants.arrayDecl);
+            let addExpr = getSubChildren(arrayDecl, 1, ParserConstants.addOp);
+            terminalNodeTest(assignStmt.children[1], ParserConstants.intConst, 8);
+            terminalNodeTest(arrayDecl.children[0], ParserConstants.ID, 'foo');
+            terminalNodeTest(addExpr.children[0], ParserConstants.intConst, 2);
+            terminalNodeTest(addExpr.children[1], ParserConstants.intConst, 4);
         })
     }),
+   describe("program -> funcDecl -> typeSpecifier ID LPAREN formalDeclList RPAREN -> funBody", () => {
+       /* formalDeclList */
+       it("int main(int argc, string argv) { }", () => {
+           let ast = Parser.parse("int main(int argc, string argv) { }");
+           let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
+           let formalDeclList = getSubChildren(funcDecl, 0, ParserConstants.formalDeclList);
+           let formalDeclArgc = getSubChildren(formalDeclList, 0, ParserConstants.formalDecl);
+           let formalDeclArgv = getSubChildren(formalDeclList, 1, ParserConstants.formalDecl);
+           terminalNodeTest(formalDeclArgc.children[0], ParserConstants.typeSpecifier, 'int');
+           terminalNodeTest(formalDeclArgc.children[1], ParserConstants.ID, 'argc');
+           terminalNodeTest(formalDeclArgv.children[0], ParserConstants.typeSpecifier, 'string');
+           terminalNodeTest(formalDeclArgv.children[1], ParserConstants.ID, 'argv');
+       }),
+       it("int main(int argc, char argv[]) { }", () => {
+           let ast = Parser.parse("int main(int argc, char argv[] ) { }")
+           let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
+           
+           let formalDeclList = getSubChildren(funcDecl, 0, ParserConstants.formalDeclList);
+           let formalDeclArgv = getSubChildren(formalDeclList, 1, ParserConstants.formalDecl);
+           let arrayDecl = getSubChildren(formalDeclArgv, 0, ParserConstants.arrayDecl);
+           terminalNodeTest(arrayDecl.children[0], ParserConstants.typeSpecifier, 'char');
+           terminalNodeTest(arrayDecl.children[1], ParserConstants.ID, 'argv');
+       })
+       /* Functon Calls*/ 
+       
+    })
     describe("Node functions", () => {
         it("should return right nodes", () => {
             let ast = Parser.parse("void foo() { { } }");
             let node = Node.getChildren(ast, ParserConstants.Program, 0);
-
 //            expect(Node.getChildren(ast, 0).type).to.equal(ParserConstants.Program);
 //           expect(Node.getChildren(ast, 1).type).to.equal(ParserConstants.funcDecl);
 
