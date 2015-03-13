@@ -29,9 +29,9 @@ decl
 varDecl
     : typeSpecifier ID LSQ_BRKT INTCONST RSQ_BRKT SEMICLN 
         {
-            var terminal = new TerminalNode(ParserConstants.ID, $2, @2);
-            $1.terminal.data = 'array ' + $1.terminal.data + $3 + $4 + $5;
-            $$ = new NonterminalNode(ParserConstants.varDecl, [$1, terminal], @0);
+            var id = new TerminalNode(ParserConstants.ID, $2, @2);
+            var intConst = new TerminalNode(ParserConstants.intConst, $4, @4);
+            $$ = new NonterminalNode(ParserConstants.arrayDecl, [$1, id, intConst], @1);
         }
     | typeSpecifier ID SEMICLN
         {
@@ -51,7 +51,6 @@ funcDecl
     : typeSpecifier ID LPAREN formalDeclList RPAREN funBody
     | typeSpecifier ID LPAREN RPAREN funBody
         {
-            $1.terminal.data = 'function ' + $1.terminal.data + $3 + $4;
             var id = new TerminalNode(ParserConstants.ID, $2, @2);
             $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, id, $5], @0)
         }
@@ -152,17 +151,15 @@ var
             $$ = new TerminalNode(ParserConstants.ID, $1, @1);
         }
     | ID LSQ_BRKT addExpr RSQ_BRKT
+        {
+            var id = new TerminalNode(ParserConstants.ID, $1, @1);
+            $$ = new NonterminalNode(ParserConstants.arrayDecl, [id, $3], @1);
+        }
     ;
     
 expression
     : addExpr
-        {
-            $$ = new NonterminalNode(ParserConstants.expression, $1, @1);
-        }
     | expression relop addExpr
-        {
-            
-        }
     ;
 
 relop
@@ -177,20 +174,16 @@ relop
 addExpr
     : term
         {
-            $$ = new NonterminalNode(ParserConstants.addExpr, $1, @1);
-            log($$);
         }
     | addExpr addop term
         {
+            $$ = new NonterminalNode(ParserConstants.addExpr, [$1, $2, $3], @1);
         }
     ;
 
 addop
-    : OPER_ADD 
-        {
-
-        }
-    | OPER_SUB
+    : OPER_ADD { $$ = new TerminalNode(ParserConstants.addOp, $1, @1); }
+    | OPER_SUB { $$ = new TerminalNode(ParserConstants.subOp, $1, @1); }
     ;
 
 term
@@ -207,13 +200,9 @@ factor
     : LPAREN expression RPAREN
     | var
     | funcCallExpr
-    | INTCONST 
-        {
-            console.log(parser.validateNumber('01', @1));
-            $$ = new TerminalNode(ParserConstants.intConst, $1, @1);
-        }
-    | CHARCONST
-    | STRCONST
+    | INTCONST { $$ = new TerminalNode(ParserConstants.intConst, $1, @1); }
+    | CHARCONST { $$ = new TerminalNode(ParserConstants.charConst, $1, @1); }
+    | STRCONST  { $$ = new TerminalNode(ParserConstants.strConst, $1, @1); }
     ;
 
 funcCallExpr
