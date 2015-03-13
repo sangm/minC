@@ -242,12 +242,24 @@ factor
 
 funcCallExpr
     : ID LPAREN argList RPAREN
+        {
+            $1 = new TerminalNode(ParserConstants.ID, $1, @1);
+            $$ = new NonterminalNode(ParserConstants.funcCallExpr, [$1, $3], @1)
+        }
     | ID LPAREN RPAREN
+        {
+            $1 = new TerminalNode(ParserConstants.ID, $1, @1);
+            var argList = new TerminalNode(ParserConstants.argList, ParserConstants.empty, @1);
+            $$ = new NonterminalNode(ParserConstants.funcCallExpr, [$1, argList], @1);
+        }
     ;
 
 argList
-    : expression
+    : expression { $$ = new NonterminalNode(ParserConstants.argList, $1, @1); }
     | argList COMMA expression
+        {
+            $1.addChild($3);
+        }
     ;
 
 %%

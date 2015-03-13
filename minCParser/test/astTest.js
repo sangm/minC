@@ -9,6 +9,9 @@ let log = (obj) => {
 
 
 let terminalNodeTest = (node, expectedType, expectedData) => {
+    if (expectedType == null || expectedData == null) {
+        console.warn("One of the arguments is null");
+    }
     expect(node.terminal.type).to.equal(expectedType);
     expect(node.terminal.data).to.equal(expectedData);
 };
@@ -265,9 +268,35 @@ describe('Abstrct Syntax Tree from minCParser', () => {
            terminalNodeTest(arrayDecl.children[0], ParserConstants.typeSpecifier, 'char');
            terminalNodeTest(arrayDecl.children[1], ParserConstants.ID, 'argv');
        })
+           
+    }),
        /* Functon Calls*/ 
-       
-    })
+    describe("program -> funcDecl -> funBody -> assignStmt -> funcExpr", () => {
+        it("int main() { x = sum(); }", () => {
+            let ast = Parser.parse("int main() { x = sum(); }");
+            let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
+            let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
+            let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
+            let assignStmt = getSubChildren(statementList, 0, ParserConstants.assignStmt);
+            let funcExpr = getSubChildren(assignStmt, 1, ParserConstants.funcCallExpr);
+            terminalNodeTest(funcExpr.children[0], ParserConstants.ID, 'sum');
+            terminalNodeTest(funcExpr.children[1], ParserConstants.argList, ParserConstants.empty);
+        }),
+        it("int main() { x = sum(1, 2, 3); }", () => {
+            let ast = Parser.parse("int main() { x = sum(1, 2, 3); }");
+            let funcDecl = getSubChildren(ast, 0, ParserConstants.funcDecl);
+            let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
+            let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
+            let assignStmt = getSubChildren(statementList, 0, ParserConstants.assignStmt);
+            let funcExpr = getSubChildren(assignStmt, 1, ParserConstants.funcCallExpr);
+            let argList = getSubChildren(funcExpr, 1, ParserConstants.argList);
+            terminalNodeTest(funcExpr.children[0], ParserConstants.ID, 'sum');
+            terminalNodeTest(argList.children[0], ParserConstants.intConst, 1);
+            terminalNodeTest(argList.children[1], ParserConstants.intConst, 2);
+            terminalNodeTest(argList.children[2], ParserConstants.intConst, 3);
+        })
+    }),
+
     describe("Node functions", () => {
         it("should return right nodes", () => {
             let ast = Parser.parse("void foo() { { } }");

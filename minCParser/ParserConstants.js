@@ -32,5 +32,7 @@ export default {
     kwdReturn: 'KWD_RETURN',
     formalDeclList: 'FORMAL_DECL_LIST',
     formalDecl: 'FORMAL_DECL',
+    funcCallExpr: 'FUNCTION_CALL_EXPRESSION',
+    argList: 'ARG_LIST',
     TYPE: 'TYPE',
     ID: 'ID',}; 
