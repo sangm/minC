@@ -1,6 +1,7 @@
 'use strict'; 
 
 (function () {
+<<<<<<< HEAD
     var Lexer = require('jison-lex');
     var grammar = require('./grammar.js');
     var minCLexer = Lexer(grammar);
