@@ -6,7 +6,7 @@ var fs = _interopRequire(require("fs"));
 
 var Parser = require("jison").Parser;
 
-var ParserConstants = _interopRequire(require("../ParserConstants"));
+var ParserConstants = _interopRequire(require("./ParserConstants"));
 
 var appRoot = _interopRequire(require("app-root-path"));
 

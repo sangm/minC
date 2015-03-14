@@ -1,3 +1,16 @@
+require('babel/register');
+import colors from 'colors/safe'
+
+const blue = colors.blue;
+const red = colors.red;
+
+function getLine(node) {
+    var green = colors.green;
+    if (node.terminal) 
+        node = node.terminal;
+    return green("(" + node.loc.first_line + ',' + node.loc.first_column + ")")
+}
+
 class TerminalNode {
     constructor(type, data, loc) {
         if (type == null) {
@@ -20,25 +33,34 @@ class NonterminalNode {
     addChild(child) {
         this.children.push(child);
     }
-}
-
-class Node {
-    static printNode(node, level = 0) {
-
-    }
-    static getChildren(root, level) {
-
+    
+    getChildren() {
+        return this.children;
     }
 }
+function print(ast, level = 0) {
+    var string = blue("\u2022 ").repeat(level);
+    if (ast.terminal) {
+        console.log(string + ast.terminal.type, ast.terminal.data + ' ' + getLine(ast));
+    }
+    else {
+        console.log(string + ast.type);
+        var children = ast.getChildren();
+        children.forEach(function(child) {
+            print(child, level + 1);
+        })
+    }
+} 
+
 
 /*
-    printNode(level = 0) {
-        let treeString = '\t'.repeat(level) + this._data;
-        if (this._children.length === 0) return treeString;
-        this._children.map(child => {
-            treeString += '\n' + child.printNode(level+1);
-        });
-        return treeString;
-        */
+   printNode(level = 0) {
+   let treeString = '\t'.repeat(level) + this._data;
+   if (this._children.length === 0) return treeString;
+   this._children.map(child => {
+   treeString += '\n' + child.printNode(level+1);
+   });
+   return treeString;
+ */
 
-export {TerminalNode, NonterminalNode, Node} 
+export {TerminalNode, NonterminalNode, print}

@@ -2,7 +2,7 @@
 
 import fs from 'fs'
 import {Parser} from 'jison'
-import ParserConstants from '../ParserConstants'
+import ParserConstants from './ParserConstants'
 import appRoot from 'app-root-path'
 import minCLexer from  '../../minCLexer/minCLexer'
 import {Node} from './tree'

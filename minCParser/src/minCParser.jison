@@ -12,10 +12,10 @@ program
         }
     | EOF { return new NonterminalNode(ParserConstants.Program); }
     ;
-  
+
 declList 
-    : decl
-    | declList decl
+    : decl { $$ = new NonterminalNode(ParserConstants.declList, $1, @1); }
+    | declList decl { $1.addChild($2); }
     ;
 
 decl
@@ -265,8 +265,9 @@ argList
 %%
 
 var appRoot = require('app-root-path');
-var ParserConstants = require(appRoot + '/minCParser/ParserConstants.js');
-var Tree = require(appRoot + '/minCParser/src/tree.js');
+var ParserConstants = require(appRoot + '/minCParser/dist/ParserConstants.js');
+var Tree = require(appRoot + '/minCParser/dist/tree.js');
+var SybmbolTable = require(appRoot + '/minCParser/dist/symbol-table.js');
 
 var TerminalNode = Tree.TerminalNode;
 var NonterminalNode = Tree.NonterminalNode;
