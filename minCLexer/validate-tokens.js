@@ -1,6 +1,4 @@
 (function () {
-    var LexerConstants = require('./LexerConstants.js');
-
     function validateNumber(number, location) {
         var regexPattern = /^[1-9]\d*/;
         return (regexPattern.test(number) || number === '0') 
