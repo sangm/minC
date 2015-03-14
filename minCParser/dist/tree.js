@@ -6,8 +6,6 @@ var _createClass = (function () { function defineProperties(target, props) { for
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
-require("babel/register");
-
 var colors = _interopRequire(require("colors/safe"));
 
 var blue = colors.blue;
@@ -19,14 +17,31 @@ function getLine(node) {
     return green("(" + node.loc.first_line + "," + node.loc.first_column + ")");
 }
 
-var TerminalNode = function TerminalNode(type, data, loc) {
-    _classCallCheck(this, TerminalNode);
+var TerminalNode = (function () {
+    function TerminalNode(type, data, loc) {
+        _classCallCheck(this, TerminalNode);
 
-    if (type == null) {
-        type = "needs to be defined in parserConstants";
+        if (type == null) {
+            type = "needs to be defined in parserConstants";
+        }
+        this.terminal = { type: type, data: data, loc: loc };
     }
-    this.terminal = { type: type, data: data, loc: loc };
-};
+
+    _createClass(TerminalNode, {
+        type: {
+            get: function () {
+                return this.terminal.type;
+            }
+        },
+        data: {
+            get: function () {
+                return this.terminal.data;
+            }
+        }
+    });
+
+    return TerminalNode;
+})();
 
 var NonterminalNode = (function () {
     function NonterminalNode(type, children, loc) {
@@ -59,7 +74,7 @@ var NonterminalNode = (function () {
 function print(ast) {
     var level = arguments[1] === undefined ? 0 : arguments[1];
 
-    var string = blue("• ").repeat(level);
+    var string = Array(level + 1).join(blue("• "));
     if (ast.terminal) {
         console.log(string + ast.terminal.type, ast.terminal.data + " " + getLine(ast));
     } else {

@@ -35,6 +35,7 @@ module.exports = {
     formalDeclList: "FORMAL_DECL_LIST",
     formalDecl: "FORMAL_DECL",
     funcCallExpr: "FUNCTION_CALL_EXPRESSION",
+    globalScope: "global",
     declList: "DECL_LIST",
     argList: "ARG_LIST",
     TYPE: "TYPE",

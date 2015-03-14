@@ -1,4 +1,3 @@
-require('babel/register');
 import colors from 'colors/safe'
 
 const blue = colors.blue;
@@ -17,6 +16,13 @@ class TerminalNode {
             type = "needs to be defined in parserConstants";
         }
        this.terminal = {type: type, data: data, loc: loc} 
+    }
+    
+    get type() {
+        return this.terminal.type;
+    }
+    get data() {
+        return this.terminal.data;
     }
 }
 class NonterminalNode {
@@ -39,7 +45,7 @@ class NonterminalNode {
     }
 }
 function print(ast, level = 0) {
-    var string = blue("\u2022 ").repeat(level);
+    var string = Array(level+1).join(blue("\u2022 "));
     if (ast.terminal) {
         console.log(string + ast.terminal.type, ast.terminal.data + ' ' + getLine(ast));
     }

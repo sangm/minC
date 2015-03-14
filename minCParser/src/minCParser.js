@@ -6,6 +6,7 @@ import ParserConstants from './ParserConstants'
 import appRoot from 'app-root-path'
 import minCLexer from  '../../minCLexer/minCLexer'
 import {Node} from './tree'
+import Table from './symbol-table'
 
 
 // `grammar` can also be a string that uses jison's grammar format

@@ -14,6 +14,8 @@ var minCLexer = _interopRequire(require("../../minCLexer/minCLexer"));
 
 var Node = require("./tree").Node;
 
+var Table = _interopRequire(require("./symbol-table"));
+
 // `grammar` can also be a string that uses jison's grammar format
 var bnf = fs.readFileSync(__dirname + "/../src/minCParser.jison", "utf8");
 var minCParser = new Parser(bnf);

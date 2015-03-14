@@ -25,6 +25,16 @@ gulp.task('parserTest', ['parser'], function() {
                    console.trace(err);
                })
 });
+gulp.task('symbolTest', ['parser'], function () {
+    var handleError = function(err) {
+        console.log(err.stack);
+    }
+    return gulp.src('minCParser/test/symbolTableTest.js')
+               .pipe(babel())
+               .on('error', handleError)
+               .pipe(mocha({ reporter: 'spec'}))
+               .on('error', handleError)
+});
 gulp.task('astTest', ['parser'], function () {
     var handleError = function(err) {
         console.log(err.stack);
@@ -46,7 +56,8 @@ gulp.task('debug', function() {
 })
 
 gulp.task('watch', function() {
-    gulp.watch(['minCParser/**/*.js', 'minCParser/**/*.jison'], ['parser', 'astTest']);
+    gulp.watch(['minCParser/**/*.js', 'minCParser/**/*.jison'], ['symbolTest']);
+
 //    gulp.watch(['minCParser/**/*.js', 'minCParser/**/*.jison'], ['parser', 'parserTest']);
     gulp.watch(['minCLexer/**/*.js'], ['lexerTest']);
 });

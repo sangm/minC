@@ -8,9 +8,13 @@ program
     : declList EOF
         {
             $$ = new NonterminalNode(ParserConstants.Program, $1, @1);
-            return $$;
+            return {ast: $$, table: parser.symbolTable};
         }
-    | EOF { return new NonterminalNode(ParserConstants.Program); }
+    | EOF 
+        { 
+            $$ = new NonterminalNode(ParserConstants.Program); 
+            return {ast: $$, table: parser.symbolTable};
+        }
     ;
 
 declList 
@@ -21,7 +25,7 @@ declList
 decl
     : varDecl
         {
-            $$ = $1;
+            parser.symbolTable.addTemps(ParserConstants.globalScope);
         }
     | funcDecl
     ;
@@ -31,12 +35,14 @@ varDecl
         {
             var id = new TerminalNode(ParserConstants.ID, $2, @2);
             var intConst = new TerminalNode(ParserConstants.intConst, $4, @4);
+            parser.symbolTable.addTemp(id.data, $1.data, ParserConstants.arrayDecl);
             $$ = new NonterminalNode(ParserConstants.arrayDecl, [$1, id, intConst], @1);
         }
     | typeSpecifier ID SEMICLN
         {
-            var terminal = new TerminalNode(ParserConstants.ID, $2, @2);
-            $$ = new NonterminalNode(ParserConstants.varDecl, [$1, terminal], @0);
+            var id = new TerminalNode(ParserConstants.ID, $2, @2);
+            parser.symbolTable.addTemp(id.data, $1.data)
+            $$ = new NonterminalNode(ParserConstants.varDecl, [$1, id], @0);
         }
     ;
 
@@ -50,12 +56,17 @@ typeSpecifier
 funcDecl
     : typeSpecifier ID LPAREN formalDeclList RPAREN funBody
         {
-            $$ = new NonterminalNode(ParserConstants.funcDecl, [$4, $6], @1);
+            $2 = new TerminalNode(ParserConstants.ID, $2, @2);
+            parser.symbolTable.insert($2.data, $1.data, ParserConstants.funcDecl);
+            parser.symbolTable.addTemps($2.data);
+            $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $4, $6], @1);
         }
     | typeSpecifier ID LPAREN RPAREN funBody
         {
-            var id = new TerminalNode(ParserConstants.ID, $2, @2);
-            $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, id, $5], @0)
+            $2 = new TerminalNode(ParserConstants.ID, $2, @2);
+            parser.symbolTable.insert($2.data, $1.data, ParserConstants.funcDecl);
+            parser.symbolTable.addTemps($2.data);
+            $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $5], @1)
         }
     ;
 
@@ -74,11 +85,13 @@ formalDecl
     : typeSpecifier ID 
         {
             var id = new TerminalNode(ParserConstants.ID, $2, @2);
+            parser.symbolTable.addTemp(id.data, $1.data)
             $$ = new NonterminalNode(ParserConstants.formalDecl, [$1, id]);
         }
     | typeSpecifier ID LSQ_BRKT RSQ_BRKT
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
+            parser.symbolTable.addTemp($2.data, $1.data, ParserConstants.arrayDecl)
             var array = new NonterminalNode(ParserConstants.arrayDecl, [$1, $2], @1);
             $$ = new NonterminalNode(ParserConstants.formalDecl, array);
         }
@@ -267,10 +280,13 @@ argList
 var appRoot = require('app-root-path');
 var ParserConstants = require(appRoot + '/minCParser/dist/ParserConstants.js');
 var Tree = require(appRoot + '/minCParser/dist/tree.js');
-var SybmbolTable = require(appRoot + '/minCParser/dist/symbol-table.js');
+var SymbolTable = require(appRoot + '/minCParser/dist/symbol-table.js');
 
 var TerminalNode = Tree.TerminalNode;
 var NonterminalNode = Tree.NonterminalNode;
+var print = Tree.print;
+
+parser.symbolTable = new SymbolTable(ParserConstants.globalScope);
 
 function log(obj) {
     console.log(JSON.stringify(obj, null, 2));
