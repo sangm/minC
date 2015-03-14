@@ -23,26 +23,23 @@ declList
     ;
 
 decl
-    : varDecl
-        {
-            parser.symbolTable.addTemps(ParserConstants.globalScope);
-        }
+    : varDecl { parser.symbolTable.addTemps(ParserConstants.globalScope); }
     | funcDecl
     ;
 
 varDecl
     : typeSpecifier ID LSQ_BRKT INTCONST RSQ_BRKT SEMICLN 
         {
-            var id = new TerminalNode(ParserConstants.ID, $2, @2);
-            var intConst = new TerminalNode(ParserConstants.intConst, $4, @4);
-            parser.symbolTable.addTemp(id.data, $1.data, ParserConstants.arrayDecl);
-            $$ = new NonterminalNode(ParserConstants.arrayDecl, [$1, id, intConst], @1);
+            $2 = new TerminalNode(ParserConstants.ID, $2, @2);
+            $4 = new TerminalNode(ParserConstants.intConst, $4, @4);
+            $$ = new NonterminalNode(ParserConstants.arrayDecl, [$1, $2, $4], @1);
+            parser.symbolTable.addTemp($2.data, $1.data, ParserConstants.arrayDecl);
         }
     | typeSpecifier ID SEMICLN
         {
-            var id = new TerminalNode(ParserConstants.ID, $2, @2);
-            parser.symbolTable.addTemp(id.data, $1.data)
-            $$ = new NonterminalNode(ParserConstants.varDecl, [$1, id], @0);
+            $2 = new TerminalNode(ParserConstants.ID, $2, @2);
+            $$ = new NonterminalNode(ParserConstants.varDecl, [$1, $2], @0);
+            parser.symbolTable.addTemp($2.data, $1.data);
         }
     ;
 
@@ -57,43 +54,37 @@ funcDecl
     : typeSpecifier ID LPAREN formalDeclList RPAREN funBody
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
+            $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $4, $6], @1);
             parser.symbolTable.insert($2.data, $1.data, ParserConstants.funcDecl);
             parser.symbolTable.addTemps($2.data);
-            $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $4, $6], @1);
         }
     | typeSpecifier ID LPAREN RPAREN funBody
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
+            $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $5], @1)
             parser.symbolTable.insert($2.data, $1.data, ParserConstants.funcDecl);
             parser.symbolTable.addTemps($2.data);
-            $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $5], @1)
         }
     ;
 
 formalDeclList
-    : formalDecl 
-        {
-            $$ = new NonterminalNode(ParserConstants.formalDeclList, $1, @1);
-        }
-    | formalDeclList COMMA formalDecl
-        {
-            $1.addChild($3);
-        }
+    : formalDecl { $$ = new NonterminalNode(ParserConstants.formalDeclList, $1, @1); }
+    | formalDeclList COMMA formalDecl { $1.addChild($3); }
     ;
 
 formalDecl
     : typeSpecifier ID 
         {
-            var id = new TerminalNode(ParserConstants.ID, $2, @2);
-            parser.symbolTable.addTemp(id.data, $1.data)
-            $$ = new NonterminalNode(ParserConstants.formalDecl, [$1, id]);
+            $2 = new TerminalNode(ParserConstants.ID, $2, @2);
+            $$ = new NonterminalNode(ParserConstants.formalDecl, [$1, $2]);
+            parser.symbolTable.addTemp($2.data, $1.data)
         }
     | typeSpecifier ID LSQ_BRKT RSQ_BRKT
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
-            parser.symbolTable.addTemp($2.data, $1.data, ParserConstants.arrayDecl)
             var array = new NonterminalNode(ParserConstants.arrayDecl, [$1, $2], @1);
             $$ = new NonterminalNode(ParserConstants.formalDecl, array);
+            parser.symbolTable.addTemp($2.data, $1.data, ParserConstants.arrayDecl)
         }
     ;
     
@@ -149,14 +140,8 @@ compoundStmt
     ;
     
 assignStmt
-    : var OPER_ASGN expression SEMICLN 
-        {
-            $$ = new NonterminalNode(ParserConstants.assignStmt, [$1, $3], @1);
-        }
-    | expression SEMICLN
-        {
-            $$ = new NonterminalNode(ParserConstants.assignStmt, $1, @1);
-        }
+    : var OPER_ASGN expression SEMICLN { $$ = new NonterminalNode(ParserConstants.assignStmt, [$1, $3], @1); }
+    | expression SEMICLN { $$ = new NonterminalNode(ParserConstants.assignStmt, $1, @1); }
     ;
     
 condStmt
@@ -190,8 +175,8 @@ var
     : ID { $$ = new TerminalNode(ParserConstants.ID, $1, @1); }
     | ID LSQ_BRKT addExpr RSQ_BRKT
         {
-            var id = new TerminalNode(ParserConstants.ID, $1, @1);
-            $$ = new NonterminalNode(ParserConstants.arrayDecl, [id, $3], @1);
+            $1 = new TerminalNode(ParserConstants.ID, $1, @1);
+            $$ = new NonterminalNode(ParserConstants.arrayDecl, [$1, $3], @1);
         }
     ;
     
@@ -269,10 +254,7 @@ funcCallExpr
 
 argList
     : expression { $$ = new NonterminalNode(ParserConstants.argList, $1, @1); }
-    | argList COMMA expression
-        {
-            $1.addChild($3);
-        }
+    | argList COMMA expression { $1.addChild($3); }
     ;
 
 %%

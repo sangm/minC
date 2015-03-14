@@ -3,15 +3,13 @@
   "version": "1.0.0",
   "description": "Minimcal C Scanner",
   "main": "minCLexer.js",
-  "directories": {
-    "test": "test"
-  },
   "dependencies": {
     "app-root-path": "^1.0.0",
     "cli-table": "^0.3.1",
     "colors": "^1.0.3",
     "jison": "^0.4.15",
-    "jison-lex": "sangm/jison-lex"
+    "jison-lex": "sangm/jison-lex",
+    "lodash": "^3.5.0"
   },
   "devDependencies": {
     "babel": "^4.7.4",
@@ -24,9 +22,8 @@
     "mocha": "^2.1.0"
   },
   "scripts": {
-    "test": "npm run-script lexer && npm run-script parser",
-    "lexer": "node_modules/mocha/bin/mocha minCLexer/test",
-    "parser": "node_modules/mocha/bin/mocha minCParser/test"
+    "test": "gulp test",
+    "watch": "gulp watch"
   },
   "repository": {
     "type": "git",
