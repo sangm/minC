@@ -22,6 +22,8 @@
     "mocha": "^2.1.0"
   },
   "scripts": {
+    "init": "npm install; npm run build",
+    "build": "gulp parser",
     "test": "gulp test",
     "watch": "gulp watch"
   },
