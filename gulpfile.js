@@ -1,64 +1,39 @@
 require('babel/register');
 var gulp = require('gulp');
-var sourcemaps = require('gulp-sourcemaps');
 var babel = require('gulp-babel');
 var mocha = require('gulp-mocha');
-var concat = require('gulp-concat');
-var nodeInspector = require('gulp-node-inspector');
+var uglify = require('gulp-uglify');
+var gutil = require('gulp-util');
 
-gulp.task('parser', function(cb) {
-    gulp.src('minCParser/src/*.js')
-               .pipe(babel())
-               .on('error', function(err) {
-                   console.log(err.message);
+gulp.task('parser', function() {
+    return gulp.src('minCParser/src/*.js')
+               .pipe(babel()).on('error', function() { 
+                   gutil.log(e); 
+                   this.end();
                })
+               .pipe(uglify())
                .pipe(gulp.dest('minCParser/dist'));
-    cb();
 });
 gulp.task('parserTest', ['parser'], function() {
-    return gulp.src('minCParser/test/*Test.js')
+    return gulp.src('minCParser/test/*.js')
                .pipe(babel())
-               .pipe(mocha({ 
-                   reporter: 'spec' 
-               }))
-               .on('error', function(err) {
-                   console.trace(err);
-               })
-});
-gulp.task('symbolTest', ['parser'], function () {
-    var handleError = function(err) {
-        console.log(err.stack);
-    }
-    return gulp.src('minCParser/test/symbolTableTest.js')
-               .pipe(babel())
-               .on('error', handleError)
-               .pipe(mocha({ reporter: 'spec'}))
-               .on('error', handleError)
-});
-gulp.task('astTest', ['parser'], function () {
-    var handleError = function(err) {
-        console.log(err.stack);
-    }
-    return gulp.src('minCParser/test/astTest.js')
-               .pipe(babel())
-               .on('error', handleError)
-               .pipe(mocha({ reporter: 'spec'}))
-               .on('error', handleError)
+               .pipe(mocha({reporter: 'spec'}, function(e) {
+                   gutil.log(e);
+                   this.end();
+               }));
 });
 gulp.task('lexerTest', function() {
-    return gulp.src('minCLexer/test/*Test.js', {read: false})
-               .pipe(mocha())
+    return gulp.src('minCLexer/test/*.js')
+               .pipe(mocha({reporter: 'spec'}, function(e) {
+                   gutil.log(e);
+                   this.end();
+               }))
 });
 
-gulp.task('debug', function() {
-    gulp.src('minCParser/src/minCParser.js')
-        .pipe(nodeInspector());
-})
+gulp.task('test', ['parserTest', 'lexerTest']);
 
 gulp.task('watch', function() {
-    gulp.watch(['minCParser/**/*.js', 'minCParser/**/*.jison'], ['symbolTest']);
-
-//    gulp.watch(['minCParser/**/*.js', 'minCParser/**/*.jison'], ['parser', 'parserTest']);
+    gulp.watch(['minCParser/**/*.js'] ['parserTest']);
     gulp.watch(['minCLexer/**/*.js'], ['lexerTest']);
 });
 

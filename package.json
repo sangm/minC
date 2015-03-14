@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "app-root-path": "^1.0.0",
+    "cli-table": "^0.3.1",
     "colors": "^1.0.3",
     "jison": "^0.4.15",
     "jison-lex": "sangm/jison-lex"
@@ -17,10 +18,9 @@
     "chai": "^2.0.0",
     "gulp": "^3.8.11",
     "gulp-babel": "^4.0.0",
-    "gulp-concat": "^2.5.2",
     "gulp-mocha": "^2.0.0",
-    "gulp-node-inspector": "0.0.3",
-    "gulp-sourcemaps": "^1.5.0",
+    "gulp-uglify": "^1.1.0",
+    "gulp-util": "^3.0.4",
     "mocha": "^2.1.0"
   },
   "scripts": {
