@@ -11,6 +11,10 @@
 + `node minCLexerDriver.js filename` to run the scanner on the file
 + `git submodule update --remote` to update test files 
 
+## To get npm run watch working
++ edit node_modules/gulp/node_modules/vinyl-fs/node_modules/glob-watcher/node_modules/gaze/node_modules/globule/package.json to remove lodash
++ remove node_modules/gulp/node_modules/vinyl-fs/node_modules/glob-watcher/node_modules/gaze/node_modules/globule/node_modules/lodash
+
 ### Dependencies
 + Make sure node is installed
 + Recent versions has npm bundled so that should be it
