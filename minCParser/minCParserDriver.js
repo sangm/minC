@@ -5,6 +5,8 @@ var print = require('./dist/util.js').print;
 var printTable = require('./dist/util.js').printTable;
 var Table = require('cli-table');
 
+var blue = colors.blue;
+
 if (process.argv.length <= 2) {
     console.log(blue("Usage: node minCParser.js filename"));
 }
