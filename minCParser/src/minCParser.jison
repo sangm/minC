@@ -8,7 +8,9 @@ program
     : declList EOF
         {
             $$ = new NonterminalNode(ParserConstants.Program, $1, @1);
-            return {ast: $$, table: parser.symbolTable};
+            var parserObject = { ast: $$, table: parser.symbolTable };
+            parser.symbolTable = new SymbolTable(ParserConstants.globalScope);
+            return parserObject;
         }
     | EOF 
         { 
@@ -55,14 +57,14 @@ funcDecl
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $4, $6], @1);
-            parser.symbolTable.insert($2.data, $1.data, ParserConstants.funcDecl);
+            parser.symbolTable.insert($2.data, $$, ParserConstants.funcDecl);
             parser.symbolTable.addTemps($2.data);
         }
     | typeSpecifier ID LPAREN RPAREN funBody
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $5], @1)
-            parser.symbolTable.insert($2.data, $1.data, ParserConstants.funcDecl);
+            parser.symbolTable.insert($2.data, $$, ParserConstants.funcDecl);
             parser.symbolTable.addTemps($2.data);
         }
     ;
@@ -230,7 +232,7 @@ mulop
     ;
 
 factor
-    : LPAREN expression RPAREN
+    : LPAREN expression RPAREN { $$ = $2; }
     | var
     | funcCallExpr
     | INTCONST { $$ = new TerminalNode(ParserConstants.intConst, $1, @1); }
@@ -263,13 +265,10 @@ var appRoot = require('app-root-path');
 var ParserConstants = require(appRoot + '/minCParser/dist/ParserConstants.js');
 var Tree = require(appRoot + '/minCParser/dist/tree.js');
 var SymbolTable = require(appRoot + '/minCParser/dist/symbol-table.js');
+var log = require(appRoot + '/minCParser/dist/util.js').log;
 
 var TerminalNode = Tree.TerminalNode;
 var NonterminalNode = Tree.NonterminalNode;
 var print = Tree.print;
 
 parser.symbolTable = new SymbolTable(ParserConstants.globalScope);
-
-function log(obj) {
-    console.log(JSON.stringify(obj, null, 2));
-}

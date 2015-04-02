@@ -1,7 +1,18 @@
 import {expect} from 'chai'
 import ParserConstants from '../src/ParserConstants'
-import {NonterminalNode, TerminalNode, print} from '../src/tree'
+import {NonterminalNode, TerminalNode} from '../src/tree'
+import {print, treeToString} from '../src/util'
 import Parser from '../src/minCParser'
+
+let undefinedNodeTest = (node) => {
+    try {
+        treeToString(node); /* This catches nodes that are "undefined" */
+        expect(true).to.equal(true);
+    }
+    catch (err) {
+        expect().to.fail(err);
+    }
+}
 
 let terminalNodeTest = (node, expectedType, expectedData) => {
     if (expectedType == null || expectedData == null) {
@@ -14,18 +25,21 @@ let getSubChildren = (node, index, type) => {
     expect(node.children[index].type).to.equal(type);
     return node.children[index];
 }
-let printNode = (node) => {
-    
+
+let parseTest = (string) => {
+    let ast = Parser.parse(string).ast;
+    undefinedNodeTest(ast);
+    return ast;
 }
 
 describe('Abstrct Syntax Tree from minCParser', () => {
     it('ProgramNode should be at the top of an empty program with 0 children', () => {
-        let ast = Parser.parse('').ast; // empty program should generate a program node
+        let ast = parseTest(''); // empty program should generate a program node
         expect(ast.type).to.equal(ParserConstants.Program);
         expect(ast.children.length).to.equal(0);
     }),
     it("multiple variable declarations", () => {
-        let ast = Parser.parse("int a; char b; string c;").ast;
+        let ast = parseTest("int a; char b; string c;");
         let declList = getSubChildren(ast, 0, ParserConstants.declList);
         let varDeclA = getSubChildren(declList, 0, ParserConstants.varDecl);
         let varDeclB = getSubChildren(declList, 1, ParserConstants.varDecl);
@@ -38,7 +52,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
         terminalNodeTest(varDeclC.children[1], ParserConstants.ID, 'c');
     }),
     it("multiple function declarations", () => {
-        let ast = Parser.parse("int main() {} void foo() {}").ast;
+        let ast = parseTest("int main() {} void foo() {}");
         let declList = getSubChildren(ast, 0, ParserConstants.declList);
         let funcDeclA = getSubChildren(declList, 0, ParserConstants.funcDecl);
         let funcDeclB = getSubChildren(declList, 1, ParserConstants.funcDecl);
@@ -47,30 +61,35 @@ describe('Abstrct Syntax Tree from minCParser', () => {
         terminalNodeTest(funcDeclB.children[0], ParserConstants.typeSpecifier, 'void');
         terminalNodeTest(funcDeclB.children[1], ParserConstants.ID, 'foo');
     }),
+    it("handles parenthesis", () => {
+        let ast = parseTest("int main() { x = (2 + 2); }");
+        undefinedNodeTest(ast);
+    }),
     describe('program -> decl -> vardecl -> typeSpecifier ID SEMICLN', () => {
         it('int x;', () => {
-            let ast = Parser.parse('int x;').ast;
+            let ast = parseTest('int x;');
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let varDecl = getSubChildren(declList, 0, ParserConstants.varDecl);
+            let a = treeToString(ast);
             terminalNodeTest(varDecl.children[0], ParserConstants.typeSpecifier, 'int');
             terminalNodeTest(varDecl.children[1], ParserConstants.ID, 'x');
         }),
         it('char y;', () => {
-            let ast = Parser.parse('char y;').ast;
+            let ast = parseTest('char y;');
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let varDecl = getSubChildren(declList, 0, ParserConstants.varDecl);
             terminalNodeTest(varDecl.children[0], ParserConstants.typeSpecifier, 'char');
             terminalNodeTest(varDecl.children[1], ParserConstants.ID, 'y');
         }),
         it('void foo;', () => {
-            let ast = Parser.parse('void foo;').ast;
+            let ast = parseTest('void foo;');
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let varDecl = getSubChildren(declList, 0, ParserConstants.varDecl);
             terminalNodeTest(varDecl.children[0], ParserConstants.typeSpecifier, 'void');
             terminalNodeTest(varDecl.children[1], ParserConstants.ID, 'foo');
         }),
         it('string xxx;', () => {
-            let ast = Parser.parse('string xxx;').ast;
+            let ast = parseTest('string xxx;');
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let varDecl = getSubChildren(declList, 0, ParserConstants.varDecl);
             terminalNodeTest(varDecl.children[0], ParserConstants.typeSpecifier, 'string');
@@ -79,7 +98,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
     }),
     describe('program -> decl -> vardecl -> typeSpecifier ID LSQ_BRKT INTCONST RSQ_BRKT SEMICLN', () => {
         it('int x[5];', () => {
-            let ast = Parser.parse('int x[5];').ast;
+            let ast = parseTest('int x[5];');
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let arrayDecl = getSubChildren(declList, 0, ParserConstants.arrayDecl);
             terminalNodeTest(arrayDecl.children[0], ParserConstants.typeSpecifier, 'int');
@@ -87,7 +106,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(arrayDecl.children[2], ParserConstants.intConst, 5);
         }),
         it('char y[200];', () => {
-            let ast = Parser.parse('char y[200];').ast;
+            let ast = parseTest('char y[200];');
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let arrayDecl = getSubChildren(declList, 0, ParserConstants.arrayDecl);
             terminalNodeTest(arrayDecl.children[0], ParserConstants.typeSpecifier, 'char');
@@ -95,7 +114,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(arrayDecl.children[2], ParserConstants.intConst, 200);
         }),
         it('void foo[2];', () => {
-            let ast = Parser.parse('void foo[2];').ast;
+            let ast = parseTest('void foo[2];');
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let arrayDecl = getSubChildren(declList, 0, ParserConstants.arrayDecl);
             terminalNodeTest(arrayDecl.children[0], ParserConstants.typeSpecifier, 'void');
@@ -103,7 +122,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(arrayDecl.children[2], ParserConstants.intConst, 2);
         }),
         it('string bar[1];', () => {
-            let ast = Parser.parse('string bar[1];').ast;
+            let ast = parseTest('string bar[1];');
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let arrayDecl = getSubChildren(declList, 0, ParserConstants.arrayDecl);
             terminalNodeTest(arrayDecl.children[0], ParserConstants.typeSpecifier, 'string');
@@ -113,7 +132,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
     }),
     describe('program -> funcDecl -> typeSpecifier ID LPAREN RPAREN funBody', () => {
         it('int foo() {}', () => {
-            let ast = Parser.parse('int foo() {}').ast;
+            let ast = parseTest('int foo() {}');
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funcBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -123,7 +142,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(funcBody.children[1], ParserConstants.statementList, ParserConstants.empty);
         }),
         it("(localDeclList) int foo() { int x; int y;} ", () => {
-            let ast = Parser.parse('int foo() { int x; char y;}').ast;
+            let ast = parseTest('int foo() { int x; char y;}');
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funcBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -139,7 +158,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(varDeclY.children[1], ParserConstants.ID, 'y');
         }),
         it("(statementList compoundStmt) void foo() { { } }", () => {
-            let ast = Parser.parse("void foo() { { } }").ast;
+            let ast = parseTest("void foo() { { } }");
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funcBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -148,7 +167,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(statementList.children[0], ParserConstants.compoundStmt, ParserConstants.empty);
         }),
         it("(statementList assignStmt) void foo() { x = 2 + 4; y = '6'; }", () => {
-            let ast = Parser.parse("void foo() { x = 2 + 4; y = '6'; z[2] = 10 - 5; f = 20 * 1; k = foo / bar;} ").ast;
+            let ast = parseTest("void foo() { x = 2 + 4; y = '6'; z[2] = 10 - 5; f = 20 * 1; k = foo / bar;} ");
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -190,7 +209,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(divExpr.children[1], ParserConstants.ID, 'bar');
         }),
         it("(condStmt without else) void foo() { if (x == 2) x = 5; } ", () => {
-            let ast = Parser.parse("void foo() { if (x == 2) x = 5; }").ast;
+            let ast = parseTest("void foo() { if (x == 2) x = 5; }");
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -205,7 +224,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(assignStmt.children[1], ParserConstants.intConst, 5)
         }),
         it("(condStmt with else) void foo() { if (x == 2) y = 6; else y = 2; }", () => {
-            let ast = Parser.parse("void foo() { if (x == 2) y = 6; else y = 2; }").ast;
+            let ast = parseTest("void foo() { if (x == 2) y = 6; else y = 2; }");
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -224,7 +243,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(assignStmt.children[1], ParserConstants.intConst, 2);
         }),
         it("(loopStmt) void foo() { while (x == 2) x = 1; }", () => {
-            let ast = Parser.parse("void foo() { while (x == 2) x = 1; }").ast;
+            let ast = parseTest("void foo() { while (x == 2) x = 1; }");
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -235,7 +254,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             let assignStmt = getSubChildren(whileLoop, 1, ParserConstants.assignStmt);
         }),
         it("(return) void foo() { return; }", () => {
-            let ast = Parser.parse("void foo() { return; }").ast;
+            let ast = parseTest("void foo() { return; }");
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -243,7 +262,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(statementList.children[0], ParserConstants.kwdReturn, ';');
         }),
         it("(return expr) void foo() {  return 2+2; }", () => {
-            let ast = Parser.parse("void foo() { return 2+4; }").ast;
+            let ast = parseTest("void foo() { return 2+4; }");
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -254,7 +273,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(addExpr.children[1], ParserConstants.intConst, 4);
         }),
         it("void foo() { foo[2+2] = 2;}", () => {
-            let ast = Parser.parse("void foo() { foo[2+4] = 8; }").ast;
+            let ast = parseTest("void foo() { foo[2+4] = 8; }");
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -266,12 +285,21 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(arrayDecl.children[0], ParserConstants.ID, 'foo');
             terminalNodeTest(addExpr.children[0], ParserConstants.intConst, 2);
             terminalNodeTest(addExpr.children[1], ParserConstants.intConst, 4);
+        }),
+        it("void foo() { x = \"123\"}", () => {
+            let ast = parseTest('void foo() { x = "123"; }');
+            let declList = getSubChildren(ast, 0, ParserConstants.declList);
+            let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
+            let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
+            let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
+            let assignStmt = getSubChildren(statementList, 0, ParserConstants.assignStmt);
+            terminalNodeTest(assignStmt.children[1], ParserConstants.strConst, "123");
         })
     }),
    describe("program -> funcDecl -> typeSpecifier ID LPAREN formalDeclList RPAREN -> funBody", () => {
        /* formalDeclList */
        it("int main(int argc, string argv) { }", () => {
-           let ast = Parser.parse("int main(int argc, string argv) { }").ast;
+           let ast = parseTest("int main(int argc, string argv) { }");
            let declList = getSubChildren(ast, 0, ParserConstants.declList);
            let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
            let formalDeclList = getSubChildren(funcDecl, 2, ParserConstants.formalDeclList);
@@ -283,7 +311,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
            terminalNodeTest(formalDeclArgv.children[1], ParserConstants.ID, 'argv');
        }),
        it("int main(int argc, char argv[]) { }", () => {
-           let ast = Parser.parse("int main(int argc, char argv[] ) { }").ast;
+           let ast = parseTest("int main(int argc, char argv[] ) { }");
            let declList = getSubChildren(ast, 0, ParserConstants.declList);
            let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
            let formalDeclList = getSubChildren(funcDecl, 2, ParserConstants.formalDeclList);
@@ -297,7 +325,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
        /* Functon Calls*/ 
     describe("program -> funcDecl -> funBody -> assignStmt -> funcExpr", () => {
         it("int main() { x = sum(); }", () => {
-            let ast = Parser.parse("int main() { x = sum(); }").ast;
+            let ast = parseTest("int main() { x = sum(); }");
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
@@ -308,7 +336,7 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(funcExpr.children[1], ParserConstants.argList, ParserConstants.empty);
         }),
         it("int main() { x = sum(1, 2, 3); }", () => {
-            let ast = Parser.parse("int main() { x = sum(1, 2, 3); }").ast;
+            let ast = parseTest("int main() { x = sum(1, 2, 3); }");
             let declList = getSubChildren(ast, 0, ParserConstants.declList);
             let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
             let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);

@@ -14,6 +14,7 @@ export default {
     addExpr: 'ADD_EXPR',
     intConst: 'INTCONST',
     charConst: 'CHARCONST',
+    strConst: 'STRCONST',
     arrayDecl: 'ARRAY_DECL',
     condStmt: 'COND_STATEMENT',
     eqOp: 'EQUAL_OPERATOR',

@@ -7,7 +7,7 @@ var gutil = require('gulp-util');
 
 gulp.task('parser', function() {
     return gulp.src('minCParser/src/*.js')
-               .pipe(babel()).on('error', function() { 
+               .pipe(babel()).on('error', function(e) { 
                    gutil.log(e); 
                    this.end();
                })
@@ -33,7 +33,7 @@ gulp.task('lexerTest', function() {
 gulp.task('test', ['parserTest', 'lexerTest']);
 
 gulp.task('watch', function() {
-    gulp.watch(['minCParser/**/*.js'] ['parserTest']);
+    gulp.watch(['minCParser/**/*.js', 'minCParser/**/*.jison'], ['parserTest']);
     gulp.watch(['minCLexer/**/*.js'], ['lexerTest']);
 });
 
