@@ -57,14 +57,14 @@ funcDecl
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $4, $6], @1);
-            parser.symbolTable.insert($2.data, $1.data, ParserConstants.funcDecl);
+            parser.symbolTable.insert($2.data, $$, ParserConstants.funcDecl);
             parser.symbolTable.addTemps($2.data);
         }
     | typeSpecifier ID LPAREN RPAREN funBody
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $5], @1)
-            parser.symbolTable.insert($2.data, $1.data + $3 + $4, ParserConstants.funcDecl);
+            parser.symbolTable.insert($2.data, $$, ParserConstants.funcDecl);
             parser.symbolTable.addTemps($2.data);
         }
     ;

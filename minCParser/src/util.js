@@ -7,13 +7,13 @@ const red = colors.red;
 
 function printTable(symTable) {
     let table = new Table({
-        head: ['Symbol', 'Type', 'Scope']
-        , colWidths: [30, 30, 40]
+        head: ['Symbol', 'Type', 'Scope', 'Attributes']
+        , colWidths: [30, 40, 15, 30]
     });
     _.forEach(symTable, function(entry, scope) {
         _.forEach(entry, function(innerScope, key) {
-            var nodeType = innerScope.nodeType ? innerScope.nodeType + ' ' : '';
-            table.push([key, nodeType + innerScope.type, scope]);
+            let nodeType = innerScope.nodeType ? innerScope.nodeType : '';
+            table.push([key, innerScope.type, scope, nodeType]);
         })
     });
     console.log(table.toString());
