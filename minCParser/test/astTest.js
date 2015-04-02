@@ -285,6 +285,15 @@ describe('Abstrct Syntax Tree from minCParser', () => {
             terminalNodeTest(arrayDecl.children[0], ParserConstants.ID, 'foo');
             terminalNodeTest(addExpr.children[0], ParserConstants.intConst, 2);
             terminalNodeTest(addExpr.children[1], ParserConstants.intConst, 4);
+        }),
+        it("void foo() { x = \"123\"}", () => {
+            let ast = parseTest('void foo() { x = "123"; }');
+            let declList = getSubChildren(ast, 0, ParserConstants.declList);
+            let funcDecl = getSubChildren(declList, 0, ParserConstants.funcDecl);
+            let funBody = getSubChildren(funcDecl, 2, ParserConstants.funBody);
+            let statementList = getSubChildren(funBody, 1, ParserConstants.statementList);
+            let assignStmt = getSubChildren(statementList, 0, ParserConstants.assignStmt);
+            terminalNodeTest(assignStmt.children[1], ParserConstants.strConst, "123");
         })
     }),
    describe("program -> funcDecl -> typeSpecifier ID LPAREN formalDeclList RPAREN -> funBody", () => {
