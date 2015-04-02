@@ -40,8 +40,24 @@ function print(ast, level = 0) {
     }
 } 
 
+function treeToString(ast, level = 0) {
+    let result;
+    let string = Array(level+1).join(blue("\u2022 "));
+    if (ast.terminal) {
+        return string + ast.terminal.type + ' ' + ast.terminal.data + ' ' + getLine(ast) + '\n';
+    } 
+    else {
+        result = string + ast.type + '\n';
+        let children = ast.getChildren();
+        for (let child of children) {
+            result += treeToString(child, level + 1);
+        }
+    }
+    return result;
+}
+
 function log(obj) {
     console.log(JSON.stringify(obj, null, 2));
 }
 
-export {print, printTable, log}
+export {print, printTable, log, treeToString}
