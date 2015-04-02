@@ -33,7 +33,7 @@ gulp.task('lexerTest', function() {
 gulp.task('test', ['parserTest', 'lexerTest']);
 
 gulp.task('watch', function() {
-    gulp.watch(['minCParser/**/*.js'], ['parserTest']);
+    gulp.watch(['minCParser/**/*.js', 'minCParser/**/*.jison'], ['parserTest']);
     gulp.watch(['minCLexer/**/*.js'], ['lexerTest']);
 });
 
