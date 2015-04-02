@@ -15,13 +15,18 @@ else {
         if (err)
             console.log(red("Could not fild the file %s"), process.argv[2])
         else {
-            var parser = minCParser.parse(data);
-            var ast = parser.ast;
-            var symTable = parser.table.table;
-            console.log(colors.magenta(data));
-            console.log(print);
-            printTable(symTable);
-            print(ast);
+            try {
+                var parser = minCParser.parse(data);
+                var ast = parser.ast;
+                var symTable = parser.table.table;
+                console.log(colors.magenta(data));
+                console.log(print);
+                printTable(symTable);
+                print(ast);
+            }
+            catch (err) {
+                console.log(err);
+            }
         }
     })
 }
