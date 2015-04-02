@@ -1,11 +1,5 @@
 # minCParser built with JavaScript (Harmony)
 
-## Notes
-+ Need nodejs/npm
-+ I opted to include "EOF" as a valid file (empty files are allowed)
-+ Since it's built with ES6, there is a `build` process
-+ Please try to use a UTF8 supported terminal if possible 
-
 ## Directories/Files
 + ![a](img/tree.png)
 + minCParser/test/ is for unit tests
