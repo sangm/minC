@@ -56,7 +56,6 @@ describe("Symbol Table", function() {
         let global = table.getScope('global');
         let main = table.getScope('main');
         let foo = table.getScope('foo');
-        log(global.main.type);
         expect(global.main.type).to.equal('int main(int argc, char argv[])');
         expect(global.main.nodeType).to.equal(ParserConstants.funcDecl)
         expect(global.foo.nodeType).to.equal(ParserConstants.funcDecl)
@@ -84,6 +83,15 @@ describe("Symbol Table", function() {
                 let table = Parser.parse("int main() { string y; }").table;
                 let main = table.getScope('main');
                 expect(main.y).to.deep.equal({type: 'string'});
+            })
+        }),
+        describe("Scoping Rules in mC", () => {
+            it("multiple local variables with the same name in different functions", () => {
+                let table = Parser.parse("int main() { int x; } void foo() { int x; }").table
+                let main = table.getScope('main');
+                let foo = table.getScope('foo');
+                scopeTest(main.x, 'int');
+                scopeTest(foo.x, 'int');
             })
         }),
         describe("function's type is represented as the function signature including the return type, number of params, and type of each parameter", () => {
