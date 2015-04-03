@@ -10,13 +10,20 @@ class SymbolTable {
         this.temp = [];
     }
 
+    destructArray(arrayDecl) {
+        if (arrayDecl.type === ParserConstants.arrayDecl) {
+            let constant = arrayDecl.children[2] ? arrayDecl.children[2].data : '';
+            return `${arrayDecl.children[0].data} ${arrayDecl.children[1].data}[${constant}]`
+        }
+    }
+
     destructTerminal(terminal) {
         if (terminal.type === ParserConstants.typeSpecifier)
             return `${terminal.data} `;
         else if (terminal.type === ParserConstants.ID)
             return `${terminal.data}`;
         else if (terminal.type === ParserConstants.arrayDecl) 
-            return `${terminal.children[0].data} ${terminal.children[1].data}[]`
+            return this.destructArray(terminal);
         else 
             return "Not a terminal";
     }
@@ -32,18 +39,25 @@ class SymbolTable {
     }
 
     destructNode(node) {
-        // need to grab typespecifier and id
+        if (!node.type) {
+            return `cannot destruct node ${node}`;
+        }
         let type = '';
-        node.children.map(child => {
-            if (child.terminal) {
-                type += this.destructTerminal(child.terminal);
-            }
-            else if (child.type === ParserConstants.formalDeclList) {
-                type += '('
-                type += this.destructDeclList(child);
-                type += ')'
-            }
-        });
+        if (node.type === ParserConstants.funcDecl) {
+            node.children.map(child => {
+                if (child.terminal) {
+                    type += this.destructTerminal(child.terminal);
+                }
+                else if (child.type === ParserConstants.formalDeclList) {
+                    type += '('
+                    type += this.destructDeclList(child);
+                    type += ')'
+                }
+            });
+        }
+        else if (node.type === ParserConstants.arrayDecl) {
+            type += this.destructTerminal(node);
+        }
         return type;
     }
     
@@ -56,18 +70,15 @@ class SymbolTable {
     }
     
     addTemps(scope) {
-        this.temp.map(t => {
-            this.insert(t.symbol, t.type, t.nodeType, scope);
-        });
+        this.temp.map(t => this.insert(t.symbol, t.type, t.nodeType, scope));
         this.temp = [];
     } 
 
     insert(symbol, type, nodeType, scope) {
         // type == actual ast node, deep clone node
-        if (nodeType === ParserConstants.funcDecl) {
+        if (nodeType) {
             type = this.destructNode(type);
         }
-        
         scope = scope || this.scopes.slice(-1)[0];
         this.table[scope] = this.table[scope] || { }
         this.table[scope][symbol] = {type: type};

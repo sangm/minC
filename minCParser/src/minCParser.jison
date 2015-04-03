@@ -35,7 +35,7 @@ varDecl
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $4 = new TerminalNode(ParserConstants.intConst, $4, @4);
             $$ = new NonterminalNode(ParserConstants.arrayDecl, [$1, $2, $4], @1);
-            parser.symbolTable.addTemp($2.data, $1.data, ParserConstants.arrayDecl);
+            parser.symbolTable.addTemp($2.data, $$, ParserConstants.arrayDecl);
         }
     | typeSpecifier ID SEMICLN
         {
@@ -86,7 +86,7 @@ formalDecl
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             var array = new NonterminalNode(ParserConstants.arrayDecl, [$1, $2], @1);
             $$ = new NonterminalNode(ParserConstants.formalDecl, array);
-            parser.symbolTable.addTemp($2.data, $1.data, ParserConstants.arrayDecl)
+            parser.symbolTable.addTemp($2.data, array, ParserConstants.arrayDecl)
         }
     ;
     
