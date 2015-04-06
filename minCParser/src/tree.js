@@ -12,6 +12,9 @@ class TerminalNode {
     get data() {
         return this.terminal.data;
     }
+    getChildren() {
+        return null;
+    }
 }
 class NonterminalNode {
     constructor(type, children, loc) {

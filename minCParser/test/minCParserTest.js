@@ -56,7 +56,7 @@ describe('minimal C parser', () => {
                 expect(() => minCParser.parse("void foo () { {{ x = 2 + 2; }} {} }")).to.not.throw('Parse error');
             }),
             it('function without localDeclList and with statementList (assignStmt)', () => {
-                expect(() => minCParser.parse("void foo () { x[2] = 5;}")).to.to.not.throw('Parse error');
+                expect(() => minCParser.parse("void foo () { x[2] = 5;}")).to.not.throw('Parse error');
             }),
             it('function without localDeclList and with statementList (condStmt)', () => {
                 expect(() => minCParser.parse("void foo () { if(x == 2) x = 5; }")).to.not.throw('Parse error');

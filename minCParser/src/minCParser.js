@@ -13,5 +13,13 @@ import Table from './symbol-table'
 let bnf = fs.readFileSync(__dirname + "/../src/minCParser.jison", "utf8");
 let minCParser = new Parser(bnf);
 minCParser.lexer = minCLexer;
+minCParser.semantic = function(code, ...rest) {
+    let optionsObj = {};
+    optionsObj['semantic'] = true;
+    rest.filter(arg => typeof arg === 'object')
+        .map(arg => Object.assign(optionsObj, arg));
+    minCParser.yy = optionsObj;
+    minCParser.parse(code);
+}
 
 export default minCParser;

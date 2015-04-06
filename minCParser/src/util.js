@@ -20,16 +20,20 @@ function printTable(symTable) {
 }
 
 function getLine(node) {
-    var green = colors.green;
     if (node.terminal) 
         node = node.terminal;
-    return green("(" + node.loc.first_line + ',' + node.loc.first_column + ")")
+    return `(${node.loc.first_line},${node.loc.first_column})`
 }
 
 function print(ast, level = 0) {
+    if (ast == null)  {
+        console.log("ast is undefined");
+        return;
+    }
     var string = Array(level+1).join(blue("\u2022 "));
     if (ast.terminal) {
-        console.log(string + ast.terminal.type, ast.terminal.data + ' ' + getLine(ast));
+        var green = colors.green;
+        console.log(string + ast.terminal.type, ast.terminal.data + ' ' + green(getLine (ast)));
     }
     else {
         console.log(string + ast.type);
@@ -60,4 +64,27 @@ function log(obj) {
     console.log(JSON.stringify(obj, null, 2));
 }
 
-export {print, printTable, log, treeToString}
+function extractNode(ast, type, n = 0, count = 0) {
+    /* Goes through ast and returns the nth sub tree of type */
+    if (type == undefined) 
+        throw "Type was undefined";
+    let children = ast.getChildren();
+    
+    while (children.length !== 0) {
+        let queue = [];
+        for (let child of children) {
+            if (child.type === type) {
+                if (count === n)
+                    return child;
+                count += 1;
+            }
+            else {
+                queue.push(...child.getChildren());
+            }
+        }
+        children = queue;
+    }
+    return null;
+}
+
+export {print, printTable, log, treeToString, extractNode, getLine}
