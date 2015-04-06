@@ -41,7 +41,7 @@ varDecl
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $$ = new NonterminalNode(ParserConstants.varDecl, [$1, $2], @0);
-            parser.symbolTable.addTemp($2.data, $1.data);
+            parser.symbolTable.addTemp($2.data, $$);
         }
     ;
 
@@ -79,7 +79,7 @@ formalDecl
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $$ = new NonterminalNode(ParserConstants.formalDecl, [$1, $2]);
-            parser.symbolTable.addTemp($2.data, $1.data)
+            parser.symbolTable.addTemp($2.data, $$)
         }
     | typeSpecifier ID LSQ_BRKT RSQ_BRKT
         {
@@ -142,7 +142,17 @@ compoundStmt
     ;
     
 assignStmt
-    : var OPER_ASGN expression SEMICLN { $$ = new NonterminalNode(ParserConstants.assignStmt, [$1, $3], @1); }
+    : var OPER_ASGN expression SEMICLN
+        {
+            if (yy.semantic) {
+                var result = parser.symbolTable.lookup($1);
+                if (!result) {
+                    throw new Exception.ScopeError($1);
+                }
+            }
+            $$ = new NonterminalNode(ParserConstants.assignStmt, [$1, $3], @1);
+            
+        }
     | expression SEMICLN { $$ = new NonterminalNode(ParserConstants.assignStmt, $1, @1); }
     ;
     
@@ -266,6 +276,7 @@ var ParserConstants = require(appRoot + '/minCParser/dist/ParserConstants.js');
 var Tree = require(appRoot + '/minCParser/dist/tree.js');
 var SymbolTable = require(appRoot + '/minCParser/dist/symbol-table.js');
 var log = require(appRoot + '/minCParser/dist/util.js').log;
+var Exception = require(appRoot + '/minCParser/dist/exceptions.js');
 
 var TerminalNode = Tree.TerminalNode;
 var NonterminalNode = Tree.NonterminalNode;

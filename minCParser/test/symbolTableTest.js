@@ -1,19 +1,16 @@
 import {expect} from 'chai'
 import ParserConstants from '../src/ParserConstants'
-import {NonterminalNode, TerminalNode, print} from '../src/tree'
+import {NonterminalNode, TerminalNode} from '../src/tree'
 import Parser from '../src/minCParser'
-import {printTable, log} from '../src/util'
+import {extractNode, print, printTable, log} from '../src/util'
 
-let scopeTest = (symbol, type, nodeType = null) => {
+let scopeTest = (symbol, type, ...rest) => {
     let compareObj = {};
     compareObj['type'] = type;
-    if (nodeType)
-        compareObj['nodeType'] = nodeType;
+    rest.filter(arg => typeof arg === 'object')
+        .map(arg => Object.assign(compareObj, arg));
     expect(symbol).to.deep.equal(compareObj);
 }
-let funcNodeTest = (node, type, nodeType) => {
-}
-
 
 describe("Symbol Table", function() {
     it("maintains global scope of just one global variable", () => {
@@ -22,12 +19,16 @@ describe("Symbol Table", function() {
     }),
 
     it("maintains global scope of global variables", () => {
-        let table = Parser.parse('int a; string b; char c; void foo[5];').table;
+        let {ast, table} = Parser.parse('int a; string b; char c; void foo[5];');
         let global = table.getScope('global');
-        expect(global.a).to.deep.equal({type: 'int'});
-        expect(global.b).to.deep.equal({type: 'string'});
-        expect(global.c).to.deep.equal({type: 'char'});
-        expect(global.foo).to.deep.equal({type: 'void foo[5]', nodeType: ParserConstants.arrayDecl});
+        let a = extractNode(ast, ParserConstants.varDecl, 0);
+        let b = extractNode(ast, ParserConstants.varDecl, 1);
+        let c = extractNode(ast, ParserConstants.varDecl, 2);
+        let node = extractNode(ast, ParserConstants.arrayDecl, 0);
+        expect(global.a).to.deep.equal({type: a});
+        expect(global.b).to.deep.equal({type: b});
+        expect(global.c).to.deep.equal({type: c});
+        expect(global.foo).to.deep.equal({type: 'void foo[5]', nodeType: ParserConstants.arrayDecl, node: node});
     }),
     it("puts functions as global variables", () => {
         let table = Parser.parse("int main() {} void foo() {}").table;
@@ -35,35 +36,47 @@ describe("Symbol Table", function() {
         expect(global.foo.nodeType).to.equal(ParserConstants.funcDecl)
     }),
     it("keeps track of parameters of a function", () => {
-        let table = Parser.parse("int main(int argc, char argv[]) {}").table;
+        let {ast, table} = Parser.parse("int main(int argc, char argv[]) {}");
         let global = table.getScope(ParserConstants.globalScope);
         let main = table.getScope('main');
+        let argv = ast.children[0].children[0].children[2].children[1].children[0];
+        let argc = ast.children[0].children[0].children[2].children[0];
         expect(global.main.nodeType).to.equal(ParserConstants.funcDecl)
-        expect(main.argc).to.deep.equal({type: 'int'});
-        expect(main.argv).to.deep.equal({type: 'char argv[]', nodeType: ParserConstants.arrayDecl});
-        
+        expect(main.argc).to.deep.equal({type: argc});
+        scopeTest(main.argv, "char argv[]", {nodeType: ParserConstants.arrayDecl}, {node: argv});
     }),
     it("keeps track of local variables within a function", () => {
-        let table = Parser.parse("int main() { int a; char b; void foo[200];}").table;
+        let {ast, table} = Parser.parse("int main() { int a; char b; void foo[200];}");
         let main = table.getScope('main');
-        expect(main.a).to.deep.equal({type: 'int'});
-        expect(main.b).to.deep.equal({type: 'char'});
-        expect(main.foo).to.deep.equal({type: 'void foo[200]', nodeType: ParserConstants.arrayDecl});
+        let a = ast.children[0].children[0].children[2].children[0].children[0];
+        let b = ast.children[0].children[0].children[2].children[0].children[1];
+        let foo = ast.children[0].children[0].children[2].children[0].children[2];
+        expect(main.a).to.deep.equal({type: a});
+        expect(main.b).to.deep.equal({type: b});
+        scopeTest(main.foo, "void foo[200]", {nodeType: ParserConstants.arrayDecl}, {node: foo});
     }),
     it("makes sure function, global, local, and parameters are kept", () => {
-        let table =  Parser.parse("int main(int argc, char argv[]) {int a; void dup[200];}" + 
-                                   "void foo() {string dup[100];}").table;
+        let {ast, table} =  Parser.parse("int main(int argc, char argv[]) {int a; void dup[200];}" + 
+                                   "void foo() {string dup[100];}");
         let global = table.getScope('global');
         let main = table.getScope('main');
         let foo = table.getScope('foo');
-        expect(global.main.type).to.equal('int main(int argc, char argv[])');
-        expect(global.main.nodeType).to.equal(ParserConstants.funcDecl)
-        expect(global.foo.nodeType).to.equal(ParserConstants.funcDecl)
-        expect(main.argc).to.deep.equal({type: 'int'});
-        expect(main.argv).to.deep.equal({type: 'char argv[]', nodeType: ParserConstants.arrayDecl});
-        expect(main.a).to.deep.equal({type: 'int'});
-        expect(main.dup).to.deep.equal({type: 'void dup[200]', nodeType: ParserConstants.arrayDecl});
-        expect(foo.dup).to.deep.equal({type: 'string dup[100]', nodeType: ParserConstants.arrayDecl});
+        
+        let mainAst = extractNode(ast, ParserConstants.funcDecl, 0);
+        let fooAst = extractNode(ast, ParserConstants.funcDecl, 1);
+        let argvNode = mainAst.children[2].children[1].children[0];
+        let dupNode = mainAst.children[3].children[0].children[1];
+        let fooDup = fooAst.children[2].children[0].children[0];
+        let argc = ast.children[0].children[0].children[2].children[0];
+        let a = ast.children[0].children[0].children[3].children[0].children[0];
+           
+        scopeTest(global.main, "int main(int argc, char argv[])", {nodeType: ParserConstants.funcDecl}, {node: mainAst});
+        scopeTest(global.foo, "void foo", {nodeType: ParserConstants.funcDecl}, {node: fooAst});
+        scopeTest(main.argc, argc);
+        scopeTest(main.argv, "char argv[]", {nodeType: ParserConstants.arrayDecl}, {node: argvNode});
+        scopeTest(main.a, a);
+        scopeTest(main.dup, "void dup[200]", {nodeType: ParserConstants.arrayDecl}, {node: dupNode});
+        scopeTest(foo.dup, "string dup[100]", {nodeType: ParserConstants.arrayDecl}, {node: fooDup})
     }),
     it("makes sure table gets cleared out after each parse", () => {
         let table = Parser.parse("int main() {}").table;
@@ -71,55 +84,69 @@ describe("Symbol Table", function() {
         let global = clean_table.getScope('global');
         expect(global.main).to.be.undefined;
         expect(global.foo.nodeType).to.equal(ParserConstants.funcDecl)
-    })
+    }),
     describe("Extending the Symbol Table", () => {
         describe("identifers that refer to variables should contain name, type, scope", () => {
             it("global variable", () => {
-                let table = Parser.parse("int a;").table;
+                let {ast, table} = Parser.parse("int a;");
+                let a = extractNode(ast, ParserConstants.varDecl, 0);
                 let global = table.getScope('global'); // makes sure a is in the global scope
-                expect(global.a).to.deep.equal({type: 'int'});
+                scopeTest(global.a, a);
             }),
             it("local variable", () => {
-                let table = Parser.parse("int main() { string y; }").table;
+                let {ast, table} = Parser.parse("int main() { string y; }");
                 let main = table.getScope('main');
-                expect(main.y).to.deep.equal({type: 'string'});
+                let y = ast.children[0].children[0].children[2].children[0].children[0];
+                scopeTest(main.y, y);
             })
         }),
         describe("Scoping Rules in mC", () => {
             it("multiple local variables with the same name in different functions", () => {
-                let table = Parser.parse("int main() { int x; } void foo() { int x; }").table
+                let {ast, table} = Parser.parse("int main() { int x; } void foo() { int x; }")
+                let x = ast.children[0].children[0].children[2].children[0].children[0];
+                let foox = ast.children[0].children[1].children[2].children[0].children[0];
                 let main = table.getScope('main');
                 let foo = table.getScope('foo');
-                scopeTest(main.x, 'int');
-                scopeTest(foo.x, 'int');
+                scopeTest(main.x, x);
+                scopeTest(foo.x, foox);
             })
         }),
         describe("function's type is represented as the function signature including the return type, number of params, and type of each parameter", () => {
             it("main function without params", () => {
-                let table = Parser.parse("int main() {} char foo() {}").table;
+                let {ast, table} = Parser.parse("int main() {} char foo() {}");
                 let global = table.getScope('global');
-                expect(global.main).to.deep.equal({type: 'int main', nodeType: ParserConstants.funcDecl});
-                expect(global.foo).to.deep.equal({type: 'char foo', nodeType: ParserConstants.funcDecl});
+                let main = extractNode(ast, ParserConstants.funcDecl, 0);
+                let foo = extractNode(ast, ParserConstants.funcDecl, 1);
+                scopeTest(global.main, 'int main', {nodeType: ParserConstants.funcDecl}, {node: main});
+                scopeTest(global.foo, 'char foo', {nodeType: ParserConstants.funcDecl}, {node: foo});
             }),
             it("functions with one param", () => {
-                let table = Parser.parse("int main(int argc) {}").table;
+                let {ast, table} = Parser.parse("int main(int argc) {}");
                 let global = table.getScope('global');
-                expect(global.main).to.deep.equal({type: 'int main(int argc)', nodeType: ParserConstants.funcDecl});
+                let node = extractNode(ast, ParserConstants.funcDecl, 0);
+                scopeTest(global.main, 'int main(int argc)', {nodeType: ParserConstants.funcDecl}, {node: node});
             }),
             it("functions with more than one params", () => {
-                let table = Parser.parse("int main(int argc, char argv[], string foo) {}").table;
+                let {ast, table} = Parser.parse("int main(int argc, char argv[], string foo) {}");
                 let global = table.getScope('global');
-                expect(global.main).to.deep.equal({type: 'int main(int argc, char argv[], string foo)', nodeType: ParserConstants.funcDecl});
+                let node = extractNode(ast, ParserConstants.funcDecl, 0);
+                scopeTest(global.main, 'int main(int argc, char argv[], string foo)', {nodeType: ParserConstants.funcDecl}, {node: node});
             }),
             it("checking all types", () => {
-                let table = Parser.parse("int x; char y; void z; int ax[100]; char ay[0]; void az[20];").table;
+                let {ast, table} = Parser.parse("int x; char y; void z; int ax[100]; char ay[0]; void az[20];");
                 let global = table.getScope('global');
-                scopeTest(global.x, 'int');
-                scopeTest(global.y, 'char');
-                scopeTest(global.z, 'void');
-                scopeTest(global.ax, 'int ax[100]', ParserConstants.arrayDecl);
-                scopeTest(global.ay, 'char ay[0]', ParserConstants.arrayDecl);
-                scopeTest(global.az, 'void az[20]', ParserConstants.arrayDecl);
+                let x = extractNode(ast, ParserConstants.varDecl, 0);
+                let y = extractNode(ast, ParserConstants.varDecl, 1);
+                let z = extractNode(ast, ParserConstants.varDecl, 2);
+                let ax = extractNode(ast, ParserConstants.arrayDecl, 0);
+                let ay = extractNode(ast, ParserConstants.arrayDecl, 1);
+                let az = extractNode(ast, ParserConstants.arrayDecl, 2);
+                scopeTest(global.x, x);
+                scopeTest(global.y, y); 
+                scopeTest(global.z, z);
+                scopeTest(global.ax, 'int ax[100]', {nodeType: ParserConstants.arrayDecl}, {node: ax});
+                scopeTest(global.ay, 'char ay[0]', {nodeType: ParserConstants.arrayDecl}, {node: ay});
+                scopeTest(global.az, 'void az[20]', {nodeType: ParserConstants.arrayDecl}, {node: az});
             })
         })
     })

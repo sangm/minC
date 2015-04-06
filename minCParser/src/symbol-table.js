@@ -76,20 +76,31 @@ class SymbolTable {
 
     insert(symbol, type, nodeType, scope) {
         // type == actual ast node, deep clone node
+        let node = null;
         if (nodeType) {
+            node = type;
             type = this.destructNode(type);
         }
         scope = scope || this.scopes.slice(-1)[0];
         this.table[scope] = this.table[scope] || { }
         this.table[scope][symbol] = {type: type};
-        if (nodeType)
+        if (nodeType) {
             this.table[scope][symbol]["nodeType"] = nodeType;
+            this.table[scope][symbol]["node"] = node;
+        }
+        
     }
     getScope(scope) {
         if (this.table[scope] == null) {
             console.warn("Scope " + scope + " does not exist");
         }
         return this.table[scope];
+    }
+    lookup(node, scope) {
+        scope = scope || this.scopes.slice(-1)[0];
+        console.log(this.temp);
+        return false;
+        
     }
 }
 export default SymbolTable;
