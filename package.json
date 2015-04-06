@@ -23,7 +23,7 @@
   },
   "scripts": {
     "init": "npm install; npm run build",
-    "build": "gulp parser",
+    "build": "gulp build",
     "test": "gulp test",
     "watch": "gulp watch"
   },

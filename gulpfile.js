@@ -37,4 +37,8 @@ gulp.task('watch', function() {
     gulp.watch(['minCLexer/**/*.js'], ['lexerTest']);
 });
 
+gulp.task('build', function() {
+    gulp.watch(['minCParser/**/*'], ['parser']);
+})
+
 gulp.task('default', ['parser']);
