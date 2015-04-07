@@ -15,6 +15,11 @@ class TerminalNode {
     getChildren() {
         return null;
     }
+
+    get length() {
+        return 0;
+    }
+    
 }
 class NonterminalNode {
     constructor(type, children, loc) {
@@ -33,6 +38,10 @@ class NonterminalNode {
     
     getChildren() {
         return this.children;
+    }
+
+    get length() {
+        return this.children.length;
     }
 }
 

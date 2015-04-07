@@ -1,6 +1,7 @@
 import colors from 'colors/safe'
 import Table from 'cli-table'
 import _ from 'lodash'
+import ParserConstants from './ParserConstants'
 
 const blue = colors.blue;
 const red = colors.red;
@@ -87,4 +88,53 @@ function extractNode(ast, type, n = 0, count = 0) {
     return null;
 }
 
-export {print, printTable, log, treeToString, extractNode, getLine}
+function getNode(node, type) {
+    let children = node.children.filter(c => c.type === type);
+    if (children.length === 1)
+        return children[0];
+    else if (children.length > 1)
+        return children;
+    return false;
+}
+
+function typeEquality(a, b) {
+    if (ParserConstants.intConst === a || ParserConstants.intConst === b) {
+        return (a === 'int' || b === 'int');
+    }
+    else if (ParserConstants.charConst === a || ParserConstants.charConst === b) {
+        return (a === 'char' || b === 'char');
+    }
+    else if (ParserConstants.strConst === a || ParserConstants.strConst === b) {
+        return (a === 'string' || b === 'string');
+    }
+}
+
+function compareNodes(funcDecl, funcCallExpr) {
+    if (funcDecl.type !== ParserConstants.funcDecl && funcCallExpr.type !== ParserConstants.funcCallExpr) // Try swapping the values if types do not match
+        [funcDecl, funcCallExpr] = [funcCallExpr, funcDecl];
+    if (funcDecl.type !== ParserConstants.funcDecl || funcCallExpr.type !== ParserConstants.funcCallExpr)
+        throw new Error("Function takes funcDecl and funcCallExpr");
+    let formalDeclList = getNode(funcDecl, ParserConstants.formalDeclList);
+    let argList = getNode(funcCallExpr, ParserConstants.argList);
+
+    if (formalDeclList && argList) {
+        if (argList.length !== formalDeclList.length)
+            return false;
+        // check type here
+        let result = _.zip(argList.children, formalDeclList.children)
+                      .map(pair => {
+                          let [arg, formalDecl] = pair;
+                          let argType = arg.type;
+                          let declType = getNode(formalDecl, ParserConstants.typeSpecifier).data;
+                          return typeEquality(declType, argType);
+                      }) 
+                      .filter(result => result === true);
+        return result.length !== 0;
+    }
+    else if (argList.length === 0 && !formalDeclList) { /* no arguments given to both */
+        return true;
+    }
+    return false;
+}
+
+export {print, printTable, log, treeToString, extractNode, getLine, compareNodes}

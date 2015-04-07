@@ -8,14 +8,13 @@ program
     : declList EOF
         {
             $$ = new NonterminalNode(ParserConstants.Program, $1, @1);
-            var parserObject = { ast: $$, table: parser.symbolTable };
-            parser.symbolTable = new SymbolTable(ParserConstants.globalScope);
+            var parserObject = { ast: $$, table: yy.symbolTable };
             return parserObject;
         }
     | EOF 
         { 
             $$ = new NonterminalNode(ParserConstants.Program); 
-            return {ast: $$, table: parser.symbolTable};
+            return {ast: $$, table: yy.symbolTable};
         }
     ;
 
@@ -25,8 +24,21 @@ declList
     ;
 
 decl
-    : varDecl { parser.symbolTable.addTemps(ParserConstants.globalScope); }
+    : varDecl
+        {
+            if (yy.semantic) {
+                var id = $1.children[1];
+                var result = yy.symbolTable.lookup(id, ParserConstants.globalScope);
+                if (result) {
+                    throw new Exception.MultipleDeclarationError(id);
+                }
+            }
+            yy.symbolTable.addTemps(ParserConstants.globalScope);
+        }
     | funcDecl
+        {
+            
+        }
     ;
 
 varDecl
@@ -35,13 +47,13 @@ varDecl
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $4 = new TerminalNode(ParserConstants.intConst, $4, @4);
             $$ = new NonterminalNode(ParserConstants.arrayDecl, [$1, $2, $4], @1);
-            parser.symbolTable.addTemp($2.data, $$, ParserConstants.arrayDecl);
+            yy.symbolTable.addTemp($2.data, $$, ParserConstants.arrayDecl);
         }
     | typeSpecifier ID SEMICLN
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $$ = new NonterminalNode(ParserConstants.varDecl, [$1, $2], @0);
-            parser.symbolTable.addTemp($2.data, $$);
+            yy.symbolTable.addTemp($2.data, $$);
         }
     ;
 
@@ -57,15 +69,15 @@ funcDecl
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $4, $6], @1);
-            parser.symbolTable.insert($2.data, $$, ParserConstants.funcDecl);
-            parser.symbolTable.addTemps($2.data);
+            yy.symbolTable.insert($2.data, $$, ParserConstants.funcDecl);
+            yy.symbolTable.addTemps($2.data);
         }
     | typeSpecifier ID LPAREN RPAREN funBody
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $$ = new NonterminalNode(ParserConstants.funcDecl, [$1, $2, $5], @1)
-            parser.symbolTable.insert($2.data, $$, ParserConstants.funcDecl);
-            parser.symbolTable.addTemps($2.data);
+            yy.symbolTable.insert($2.data, $$, ParserConstants.funcDecl);
+            yy.symbolTable.addTemps($2.data);
         }
     ;
 
@@ -79,25 +91,45 @@ formalDecl
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             $$ = new NonterminalNode(ParserConstants.formalDecl, [$1, $2]);
-            parser.symbolTable.addTemp($2.data, $$)
+            yy.symbolTable.addTemp($2.data, $$)
         }
     | typeSpecifier ID LSQ_BRKT RSQ_BRKT
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
             var array = new NonterminalNode(ParserConstants.arrayDecl, [$1, $2], @1);
             $$ = new NonterminalNode(ParserConstants.formalDecl, array);
-            parser.symbolTable.addTemp($2.data, array, ParserConstants.arrayDecl)
+            yy.symbolTable.addTemp($2.data, array, ParserConstants.arrayDecl)
         }
     ;
     
 funBody
     : LCRLY_BRKT localDeclList statementList RCRLY_BRKT
         {
+            /*
+            var nodes = [];
+            if ($2 != null)
+                nodes.push($2);
+            if ($2 != null)
+                nodes.push($3);
+            $$ = new NonterminalNode(ParserConstants.funBody, nodes, @1);
+                */
             if ($2 == null)
                 $2 = new TerminalNode(ParserConstants.localDeclList, ParserConstants.empty, @1);
             if ($3 == null)
                 $3 = new TerminalNode(ParserConstants.statementList, ParserConstants.empty, @1);
+            
             $$ = new NonterminalNode(ParserConstants.funBody, [$2, $3], @1);
+            if (yy.semantic && yy.symbolTable.functionCalls.length !== 0) { /* functions have been called */
+                var functionCalls = yy.symbolTable.functionCalls;
+                functionCalls.map(function (func) {
+                    var id = func.children[0];
+                    var funcDecl = yy.symbolTable.lookup(id, ParserConstants.globalScope);
+                    var result = Util.compareNodes(funcDecl.node, func);
+                    if (!result) {
+                        throw new Exception.FunctionMismatchError(id);
+                    }
+                })
+            }
         }
     ;
     
@@ -105,6 +137,14 @@ localDeclList
     :  
     | localDeclList varDecl 
         { 
+            if (yy.semantic) {
+                var id = $2.children[1];
+                var result = yy.symbolTable.lookup(id, id.data);
+                if (result) {
+                    throw new Exception.MultipleDeclarationError(id);
+                }
+            }
+
             if ($1 == null)
                 $$ = new NonterminalNode(ParserConstants.localDeclList, $2, @1);
             else
@@ -145,7 +185,7 @@ assignStmt
     : var OPER_ASGN expression SEMICLN
         {
             if (yy.semantic) {
-                var result = parser.symbolTable.lookup($1);
+                var result = yy.symbolTable.lookup($1, $1.data);
                 if (!result) {
                     throw new Exception.ScopeError($1);
                 }
@@ -254,13 +294,28 @@ funcCallExpr
     : ID LPAREN argList RPAREN
         {
             $1 = new TerminalNode(ParserConstants.ID, $1, @1);
+            if (yy.semantic) {
+                var result = yy.symbolTable.lookup($1);
+                if (!result) {
+                    throw new Exception.ScopeError($1);
+                }
+            }
             $$ = new NonterminalNode(ParserConstants.funcCallExpr, [$1, $3], @1)
+            yy.symbolTable.addFunctionCall($$);
         }
     | ID LPAREN RPAREN
         {
             $1 = new TerminalNode(ParserConstants.ID, $1, @1);
             var argList = new TerminalNode(ParserConstants.argList, ParserConstants.empty, @1);
+            if (yy.semantic) {
+                
+                var result = yy.symbolTable.lookup($1);
+                if (!result) {
+                    throw new Exception.ScopeError($1);
+                }
+            }
             $$ = new NonterminalNode(ParserConstants.funcCallExpr, [$1, argList], @1);
+            yy.symbolTable.addFunctionCall($$);
         }
     ;
 
@@ -277,9 +332,8 @@ var Tree = require(appRoot + '/minCParser/dist/tree.js');
 var SymbolTable = require(appRoot + '/minCParser/dist/symbol-table.js');
 var log = require(appRoot + '/minCParser/dist/util.js').log;
 var Exception = require(appRoot + '/minCParser/dist/exceptions.js');
+var Util = require(appRoot + '/minCParser/dist/util.js')
 
 var TerminalNode = Tree.TerminalNode;
 var NonterminalNode = Tree.NonterminalNode;
 var print = Tree.print;
-
-parser.symbolTable = new SymbolTable(ParserConstants.globalScope);

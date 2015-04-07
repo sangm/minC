@@ -7,6 +7,7 @@ class SymbolTable {
     constructor(globalScope) {
         this.table = { }
         this.scopes = [globalScope]
+        this._functionCalls = [];
         this.temp = [];
     }
 
@@ -90,17 +91,39 @@ class SymbolTable {
         }
         
     }
+
     getScope(scope) {
         if (this.table[scope] == null) {
-            console.warn("Scope " + scope + " does not exist");
+            return false;
         }
         return this.table[scope];
     }
+
     lookup(node, scope) {
         scope = scope || this.scopes.slice(-1)[0];
-        console.log(this.temp);
+        // global checked with global
+        if (scope === ParserConstants.globalScope) {
+            let global = this.getScope(ParserConstants.globalScope);
+            if (global[node.data])
+                return global[node.data];
+        }
+        else {
+            let local = this.temp.map(t => t.type);
+            if (node.type === ParserConstants.ID) {
+                let results = _.flatten(local.map(l => l.children.filter(c => c.type === ParserConstants.ID)))
+                               .filter(n => n.data === node.data && n !== node);
+                return results.length !== 0;
+            }
+        }
         return false;
-        
+    }
+
+    get functionCalls() {
+        return this._functionCalls;
+    }
+    
+    addFunctionCall(func) {
+        this._functionCalls.push(func);
     }
 }
 export default SymbolTable;

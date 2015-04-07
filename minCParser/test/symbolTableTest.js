@@ -13,13 +13,54 @@ let scopeTest = (symbol, type, ...rest) => {
 }
 
 describe("Symbol Table", function() {
-    it("maintains global scope of just one global variable", () => {
-        let tableA = Parser.parse('int a;').table;
-        let tableB = Parser.parse('void foo[10];');
+    describe("keeps track of function calls", () => {
+        describe("without args", () => {
+            it("one function", () => {
+                let {ast, table} = Parser.Parse("void foo() {} int main() { foo(); }");
+                let foo = extractNode(ast, ParserConstants.funcDecl, 0);
+                let main = extractNode(ast, ParserConstants.funcDecl, 1);
+                let funcCall = main.children[2].children[1].children[0].children[0]
+                expect(table.functionCalls).to.deep.equal([funcCall]);
+            }),
+            it("two functions defined, one function stored", () => {
+                let {ast, table} = Parser.Parse("void foo() {} char bar() {} int main() { foo(); }");
+                let foo = extractNode(ast, ParserConstants.funcDecl, 0);
+                let main = extractNode(ast, ParserConstants.funcDecl, 2);
+                let funcCall = main.children[2].children[1].children[0].children[0]
+                expect(table.functionCalls).to.deep.equal([funcCall]);
+            })
+                it("two functions", () => {
+                    let {ast, table} = Parser.Parse("void foo() {} char bar() {} int main() { foo(); bar(); }");
+                    let foo = extractNode(ast, ParserConstants.funcDecl, 0);
+                    let main = extractNode(ast, ParserConstants.funcDecl, 2);
+                    let funcCallFoo = main.children[2].children[1].children[0].children[0]
+                    let funcCallBar = main.children[2].children[1].children[1].children[0]
+                    expect(table.functionCalls).to.deep.equal([funcCallFoo, funcCallBar]);
+                })
+        }),
+        describe("with args", () => {
+            it("one arg", () => {
+                let {ast, table} = Parser.Parse("void foo(int x) {} int main() { foo(1); }");
+                let foo = extractNode(ast, ParserConstants.funcDecl, 0);
+                let main = extractNode(ast, ParserConstants.funcDecl, 1);
+                let funcCall = main.children[2].children[1].children[0].children[0]
+                expect(table.functionCalls).to.deep.equal([funcCall]);
+            }),
+            it("multiple args", () => {
+                let {ast, table} = Parser.Parse("void foo(int x, char y, string z) {} int main() { foo(1, 'a', \"test\"); }");
+                let foo = extractNode(ast, ParserConstants.funcDecl, 0);
+                let main = extractNode(ast, ParserConstants.funcDecl, 1);
+                let funcCall = main.children[2].children[1].children[0].children[0]
+                expect(table.functionCalls).to.deep.equal([funcCall]);
+            })
+        })
     }),
-
+    it("maintains global scope of just one global variable", () => {
+        let tableA = Parser.Parse('int a;').table;
+        let tableB = Parser.Parse('void foo[10];');
+    }),
     it("maintains global scope of global variables", () => {
-        let {ast, table} = Parser.parse('int a; string b; char c; void foo[5];');
+        let {ast, table} = Parser.Parse('int a; string b; char c; void foo[5];');
         let global = table.getScope('global');
         let a = extractNode(ast, ParserConstants.varDecl, 0);
         let b = extractNode(ast, ParserConstants.varDecl, 1);
@@ -31,12 +72,12 @@ describe("Symbol Table", function() {
         expect(global.foo).to.deep.equal({type: 'void foo[5]', nodeType: ParserConstants.arrayDecl, node: node});
     }),
     it("puts functions as global variables", () => {
-        let table = Parser.parse("int main() {} void foo() {}").table;
+        let table = Parser.Parse("int main() {} void foo() {}").table;
         let global = table.getScope('global');
         expect(global.foo.nodeType).to.equal(ParserConstants.funcDecl)
     }),
     it("keeps track of parameters of a function", () => {
-        let {ast, table} = Parser.parse("int main(int argc, char argv[]) {}");
+        let {ast, table} = Parser.Parse("int main(int argc, char argv[]) {}");
         let global = table.getScope(ParserConstants.globalScope);
         let main = table.getScope('main');
         let argv = ast.children[0].children[0].children[2].children[1].children[0];
@@ -46,7 +87,7 @@ describe("Symbol Table", function() {
         scopeTest(main.argv, "char argv[]", {nodeType: ParserConstants.arrayDecl}, {node: argv});
     }),
     it("keeps track of local variables within a function", () => {
-        let {ast, table} = Parser.parse("int main() { int a; char b; void foo[200];}");
+        let {ast, table} = Parser.Parse("int main() { int a; char b; void foo[200];}");
         let main = table.getScope('main');
         let a = ast.children[0].children[0].children[2].children[0].children[0];
         let b = ast.children[0].children[0].children[2].children[0].children[1];
@@ -56,7 +97,7 @@ describe("Symbol Table", function() {
         scopeTest(main.foo, "void foo[200]", {nodeType: ParserConstants.arrayDecl}, {node: foo});
     }),
     it("makes sure function, global, local, and parameters are kept", () => {
-        let {ast, table} =  Parser.parse("int main(int argc, char argv[]) {int a; void dup[200];}" + 
+        let {ast, table} =  Parser.Parse("int main(int argc, char argv[]) {int a; void dup[200];}" + 
                                    "void foo() {string dup[100];}");
         let global = table.getScope('global');
         let main = table.getScope('main');
@@ -79,22 +120,23 @@ describe("Symbol Table", function() {
         scopeTest(foo.dup, "string dup[100]", {nodeType: ParserConstants.arrayDecl}, {node: fooDup})
     }),
     it("makes sure table gets cleared out after each parse", () => {
-        let table = Parser.parse("int main() {}").table;
-        let clean_table = Parser.parse("void foo() {}").table;
+        let table = Parser.Parse("int main() {}").table;
+        let clean_table = Parser.Parse("void foo() {}").table;
         let global = clean_table.getScope('global');
+        console.log(global);
         expect(global.main).to.be.undefined;
         expect(global.foo.nodeType).to.equal(ParserConstants.funcDecl)
     }),
     describe("Extending the Symbol Table", () => {
         describe("identifers that refer to variables should contain name, type, scope", () => {
             it("global variable", () => {
-                let {ast, table} = Parser.parse("int a;");
+                let {ast, table} = Parser.Parse("int a;");
                 let a = extractNode(ast, ParserConstants.varDecl, 0);
                 let global = table.getScope('global'); // makes sure a is in the global scope
                 scopeTest(global.a, a);
             }),
             it("local variable", () => {
-                let {ast, table} = Parser.parse("int main() { string y; }");
+                let {ast, table} = Parser.Parse("int main() { string y; }");
                 let main = table.getScope('main');
                 let y = ast.children[0].children[0].children[2].children[0].children[0];
                 scopeTest(main.y, y);
@@ -102,7 +144,7 @@ describe("Symbol Table", function() {
         }),
         describe("Scoping Rules in mC", () => {
             it("multiple local variables with the same name in different functions", () => {
-                let {ast, table} = Parser.parse("int main() { int x; } void foo() { int x; }")
+                let {ast, table} = Parser.Parse("int main() { int x; } void foo() { int x; }")
                 let x = ast.children[0].children[0].children[2].children[0].children[0];
                 let foox = ast.children[0].children[1].children[2].children[0].children[0];
                 let main = table.getScope('main');
@@ -113,7 +155,7 @@ describe("Symbol Table", function() {
         }),
         describe("function's type is represented as the function signature including the return type, number of params, and type of each parameter", () => {
             it("main function without params", () => {
-                let {ast, table} = Parser.parse("int main() {} char foo() {}");
+                let {ast, table} = Parser.Parse("int main() {} char foo() {}");
                 let global = table.getScope('global');
                 let main = extractNode(ast, ParserConstants.funcDecl, 0);
                 let foo = extractNode(ast, ParserConstants.funcDecl, 1);
@@ -121,19 +163,19 @@ describe("Symbol Table", function() {
                 scopeTest(global.foo, 'char foo', {nodeType: ParserConstants.funcDecl}, {node: foo});
             }),
             it("functions with one param", () => {
-                let {ast, table} = Parser.parse("int main(int argc) {}");
+                let {ast, table} = Parser.Parse("int main(int argc) {}");
                 let global = table.getScope('global');
                 let node = extractNode(ast, ParserConstants.funcDecl, 0);
                 scopeTest(global.main, 'int main(int argc)', {nodeType: ParserConstants.funcDecl}, {node: node});
             }),
             it("functions with more than one params", () => {
-                let {ast, table} = Parser.parse("int main(int argc, char argv[], string foo) {}");
+                let {ast, table} = Parser.Parse("int main(int argc, char argv[], string foo) {}");
                 let global = table.getScope('global');
                 let node = extractNode(ast, ParserConstants.funcDecl, 0);
                 scopeTest(global.main, 'int main(int argc, char argv[], string foo)', {nodeType: ParserConstants.funcDecl}, {node: node});
             }),
             it("checking all types", () => {
-                let {ast, table} = Parser.parse("int x; char y; void z; int ax[100]; char ay[0]; void az[20];");
+                let {ast, table} = Parser.Parse("int x; char y; void z; int ax[100]; char ay[0]; void az[20];");
                 let global = table.getScope('global');
                 let x = extractNode(ast, ParserConstants.varDecl, 0);
                 let y = extractNode(ast, ParserConstants.varDecl, 1);

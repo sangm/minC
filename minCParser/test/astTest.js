@@ -27,7 +27,7 @@ let getSubChildren = (node, index, type) => {
 }
 
 let parseTest = (string) => {
-    let ast = Parser.parse(string).ast;
+    let ast = Parser.Parse(string).ast;
     undefinedNodeTest(ast);
     return ast;
 }
