@@ -83,14 +83,26 @@ funcDecl
 
 formalDeclList
     : formalDecl { $$ = new NonterminalNode(ParserConstants.formalDeclList, $1, @1); }
-    | formalDeclList COMMA formalDecl { $1.addChild($3); }
+    | formalDeclList COMMA formalDecl
+        {
+            if (yy.semantic) {
+                var id = Util.getNode($3, ParserConstants.ID);
+                if (!id)
+                    throw new Error("Could not get ID node in formalDecl");
+                var result = yy.symbolTable.lookup(id, ParserConstants.localScope);
+                if (result) {
+                    throw new Exception.MultipleDeclarationError(id);
+                }
+            }
+            $1.addChild($3);
+        }
     ;
 
 formalDecl
     : typeSpecifier ID 
         {
             $2 = new TerminalNode(ParserConstants.ID, $2, @2);
-            $$ = new NonterminalNode(ParserConstants.formalDecl, [$1, $2]);
+            $$ = new NonterminalNode(ParserConstants.formalDecl, [$1, $2], @2);
             yy.symbolTable.addTemp($2.data, $$)
         }
     | typeSpecifier ID LSQ_BRKT RSQ_BRKT
@@ -105,14 +117,6 @@ formalDecl
 funBody
     : LCRLY_BRKT localDeclList statementList RCRLY_BRKT
         {
-            /*
-            var nodes = [];
-            if ($2 != null)
-                nodes.push($2);
-            if ($2 != null)
-                nodes.push($3);
-            $$ = new NonterminalNode(ParserConstants.funBody, nodes, @1);
-                */
             if ($2 == null)
                 $2 = new TerminalNode(ParserConstants.localDeclList, ParserConstants.empty, @1);
             if ($3 == null)
@@ -123,7 +127,7 @@ funBody
                 var functionCalls = yy.symbolTable.functionCalls;
                 functionCalls.map(function (func) {
                     var id = func.children[0];
-                    var funcDecl = yy.symbolTable.lookup(id, ParserConstants.globalScope);
+                    var funcDecl = yy.symbolTable.lookup(id, ParserConstants.globalScope).node;
                     var result = Util.compareNodes(funcDecl.node, func);
                     if (!result) {
                         throw new Exception.FunctionMismatchError(id);
@@ -139,9 +143,10 @@ localDeclList
         { 
             if (yy.semantic) {
                 var id = $2.children[1];
-                var result = yy.symbolTable.lookup(id, id.data);
+                var result = yy.symbolTable.lookup($2, ParserConstants.localScope);
                 if (result) {
-                    throw new Exception.MultipleDeclarationError(id);
+                    if (result.scope !== ParserConstants.globalScope)
+                        throw new Exception.MultipleDeclarationError(id);
                 }
             }
 
@@ -185,13 +190,20 @@ assignStmt
     : var OPER_ASGN expression SEMICLN
         {
             if (yy.semantic) {
-                var result = yy.symbolTable.lookup($1, $1.data);
+                var id;
+                if ($1.type !== ParserConstants.ID) 
+                    id = Util.getNode($1, ParserConstants.ID);
+                else
+                    id = $1;
+                var result = yy.symbolTable.lookup($1, ParserConstants.localScope);
+                if (result.error) {
+                    throw new result.error($1);
+                }
                 if (!result) {
                     throw new Exception.ScopeError($1);
                 }
             }
             $$ = new NonterminalNode(ParserConstants.assignStmt, [$1, $3], @1);
-            
         }
     | expression SEMICLN { $$ = new NonterminalNode(ParserConstants.assignStmt, $1, @1); }
     ;

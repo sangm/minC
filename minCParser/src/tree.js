@@ -19,6 +19,10 @@ class TerminalNode {
     get length() {
         return 0;
     }
+
+    get loc() {
+        return this.terminal.loc;
+    }
     
 }
 class NonterminalNode {
@@ -30,6 +34,7 @@ class NonterminalNode {
         if (this.children.constructor !== Array) 
             this.children = [this.children];
         this.type = type;
+        this.loc = loc;
     }
     
     addChild(child) {

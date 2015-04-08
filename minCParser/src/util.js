@@ -21,6 +21,13 @@ function printTable(symTable) {
 }
 
 function getLine(node) {
+    if (node == null) {
+        return "node was null";
+    }
+    if (!node.loc) {
+        console.log(node);
+        return "location isn't defined for node"
+    }
     if (node.terminal) 
         node = node.terminal;
     return `(${node.loc.first_line},${node.loc.first_column})`
@@ -70,7 +77,6 @@ function extractNode(ast, type, n = 0, count = 0) {
     if (type == undefined) 
         throw "Type was undefined";
     let children = ast.getChildren();
-    
     while (children.length !== 0) {
         let queue = [];
         for (let child of children) {
@@ -89,7 +95,17 @@ function extractNode(ast, type, n = 0, count = 0) {
 }
 
 function getNode(node, type) {
-    let children = node.children.filter(c => c.type === type);
+    if (node == null)
+        return "getNode returned null";
+    if (!node.children) {
+        return "node in getNode does not have children";
+    }
+    let children = node.children.filter(c => {
+        if (c.type === ParserConstants.arrayDecl)
+            return c.children.filter(c => c.type === type);
+        else
+            return c.type === type
+    });
     if (children.length === 1)
         return children[0];
     else if (children.length > 1)
@@ -128,8 +144,8 @@ function compareNodes(funcDecl, funcCallExpr) {
                           let declType = getNode(formalDecl, ParserConstants.typeSpecifier).data;
                           return typeEquality(declType, argType);
                       }) 
-                      .filter(result => result === true);
-        return result.length !== 0;
+                      .filter(result => result === false);
+        return result.length === 0;
     }
     else if (argList.length === 0 && !formalDeclList) { /* no arguments given to both */
         return true;
@@ -137,4 +153,4 @@ function compareNodes(funcDecl, funcCallExpr) {
     return false;
 }
 
-export {print, printTable, log, treeToString, extractNode, getLine, compareNodes}
+export {print, printTable, log, treeToString, extractNode, getLine, compareNodes, getNode, typeEquality}

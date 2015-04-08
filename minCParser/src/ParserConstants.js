@@ -35,6 +35,7 @@ export default {
     formalDecl: 'FORMAL_DECL',
     funcCallExpr: 'FUNCTION_CALL_EXPRESSION',
     globalScope: 'global',
+    localScope: 'local',
     declList: 'DECL_LIST',
     argList: 'ARG_LIST',
     TYPE: 'TYPE',
