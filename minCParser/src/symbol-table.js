@@ -3,7 +3,6 @@ import ParserConstants from './ParserConstants'
 import {print, log, getNode, typeEquality} from './util'
 import { TypeMismatchError, FunctionMismatchError } from './exceptions.js'
 
-
 function getType(node) {
     // if it has charConst, intConst, strConst
     let result = getNode(node, ParserConstants.intConst) ||
@@ -97,19 +96,26 @@ class SymbolTable {
 
     insert(symbol, type, nodeType, scope) {
         // type == actual ast node, deep clone node
-        let node = null;
+        scope = scope || ParserConstants.globalScope;
+        this.table[scope] = this.table[scope] || { }
+        if (this.table[scope][symbol]) {
+            let scopeSymbol = this.table[scope][symbol];
+        }
+        this.table[scope][symbol] = this.constructSymbol(symbol, type, nodeType);
+    }
+    
+    constructSymbol(symbol, type, nodeType) {
+        let node;
         if (nodeType) {
             node = type;
             type = this.destructNode(type);
         }
-        scope = scope || ParserConstants.globalScope;
-        this.table[scope] = this.table[scope] || { }
-        this.table[scope][symbol] = {type: type};
+        let symbolObj = {type: type}
         if (nodeType) {
-            this.table[scope][symbol]["nodeType"] = nodeType;
-            this.table[scope][symbol]["node"] = node;
+            symbolObj["nodeType"] = nodeType;
+            symbolObj["node"] = node;
         }
-        
+        return symbolObj;
     }
 
     getScope(scope) {
@@ -120,15 +126,17 @@ class SymbolTable {
     }
 
     searchLocalScope(node) {
-        let global = this.getScope(ParserConstants.globalScope);
-        let results = this.temp.filter(t => {
+        let results = this.temp.map(t => {
             let localNode = t.type;
-            let localId = localNode !== ParserConstants.ID ? getNode(localNode, ParserConstants.ID) : localNode;
-            let nodeId = node.type !== ParserConstants.ID ? getNode(node, ParserConstants.ID) : node
-            return localId !== nodeId && localId.data === nodeId.data;
-        });
-        return results;
-        
+            let localId = getNode(localNode, ParserConstants.ID);
+            let nodeId = getNode(node, ParserConstants.ID);
+            if (!Array.isArray(nodeId)) {
+                nodeId = [nodeId];
+            }
+            nodeId = nodeId.filter(n => localId !== n && localId.data === n.data);
+            return nodeId;
+        })
+        return _.flatten(results);
     }
     
     searchGlobalScope(node) {
@@ -151,20 +159,35 @@ class SymbolTable {
         }
         else {
             let results = this.searchLocalScope(node);
+            let returnObj = {};
             if (results.length === 0) {
                 return this.searchGlobalScope(id);
             }
             else if (results.length === 1) {
                 if (node.type === ParserConstants.arrayDecl) {
+                    var returnObj = {};
                     let result = results[0].type;
                     let resultType = getNode(result, ParserConstants.typeSpecifier);
                     let nodeType = getType(node);
-                    return {error: TypeMismatchError, scope:ParserConstants.localScope, node: results[0]};
+                    returnObj['scope'] = ParserConstants.localScope;
+                    returnObj['node'] = results[0];
+                    if (nodeType.type !== ParserConstants.intConst) {
+                        returnObj['error'] = TypeMismatchError;
+                    }
+                    return returnObj;
                 }
                 return {scope: ParserConstants.localScope, node: results[0] };
             }
-            else { /* this shouldn't happen... but you know.. programs. */
-                console.warn('Multiple values were found in local scope');
+            else { /* only way this happens is if you have sub type expressions such as a[b[20]] */
+                let nodes = results.map(sym => {
+                    let [node] = this.temp.filter(t => t.symbol === sym.data)
+                    let type = getNode(node.type, ParserConstants.typeSpecifier);
+                    return type;
+                }).reduce((prev, current) => prev.data === current.data);
+                if (!nodes) {
+                    returnObj['error'] = TypeMismatchError;
+                    return returnObj;
+                }
                 return results;
             }
         }

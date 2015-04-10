@@ -6,6 +6,34 @@ import ParserConstants from './ParserConstants'
 const blue = colors.blue;
 const red = colors.red;
 
+function functionEquality(a, b) {
+    // a.id === b.id && a.[formalDeclList].type === b.[formalDeclList].type 
+    if (a == null || b == null) {
+        throw new Error("Function Equality received null nodes");
+    }
+    let aID = getNode(a, ParserConstants.ID);
+    let bID = getNode(b, ParserConstants.ID);
+    if (aID.data !== bID.data)
+        return false;
+    let filterFunction = (node, type) => { return getNode(node, type).data; }
+    let aFormalDeclList = getNode(a, ParserConstants.formalDeclList),
+        bFormalDeclList = getNode(b, ParserConstants.formalDeclList),
+        aTypes, 
+        bTypes;
+
+    if (aFormalDeclList) {
+        aTypes = aFormalDeclList.children.map(formalDecl => filterFunction(formalDecl, ParserConstants.typeSpecifier));
+    }
+    if (bFormalDeclList) {
+        bTypes = bFormalDeclList.children.map(formalDecl => filterFunction(formalDecl, ParserConstants.typeSpecifier));
+    }
+    return _.isEqual(aTypes, bTypes);
+}
+
+function arrayEquality(a, b) {
+
+}
+
 function printTable(symTable) {
     let table = new Table({
         head: ['Symbol', 'Type', 'Scope', 'Attributes']
@@ -13,8 +41,16 @@ function printTable(symTable) {
     });
     _.forEach(symTable, function(entry, scope) {
         _.forEach(entry, function(innerScope, key) {
-            let nodeType = innerScope.nodeType ? innerScope.nodeType : '';
-            table.push([key, innerScope.type, scope, nodeType]);
+            if (Array.isArray(innerScope)) {
+                _.forEach(innerScope, function(sub) {
+                    let nodeType = sub.nodeType ? sub.nodeType : '';
+                    table.push([key, sub.type, scope, nodeType]);
+                })
+            }
+            else {
+                let nodeType = innerScope.nodeType ? innerScope.nodeType : '';
+                table.push([key, innerScope.type, scope, nodeType]);
+            }
         })
     });
     console.log(table.toString());
@@ -94,22 +130,37 @@ function extractNode(ast, type, n = 0, count = 0) {
     return null;
 }
 
+function getID(node) {
+   if (node == null) return;
+    
+}
+
 function getNode(node, type) {
     if (node == null)
         return "getNode returned null";
+    if (node.type === type)
+        return node;
     if (!node.children) {
         return "node in getNode does not have children";
     }
-    let children = node.children.filter(c => {
-        if (c.type === ParserConstants.arrayDecl)
-            return c.children.filter(c => c.type === type);
+    let children = _.flatten(node.children.map(c => {
+        if (c.type === ParserConstants.arrayDecl) {
+            let result = c.children.filter(c => c.type === type || c.type === ParserConstants.arrayDecl);
+            let b = result.map(n => getNode(n, type));
+            let f = result.map(n => {
+                return getNode(n, type)
+            });
+            return f;
+        }
         else
-            return c.type === type
-    });
-    if (children.length === 1)
+            if (c.type === type) return c;
+    }).filter(c => c != null));
+    if (children.length === 1) {
         return children[0];
-    else if (children.length > 1)
+    }
+    else if (children.length > 1) {
         return children;
+    }
     return false;
 }
 
@@ -153,4 +204,4 @@ function compareNodes(funcDecl, funcCallExpr) {
     return false;
 }
 
-export {print, printTable, log, treeToString, extractNode, getLine, compareNodes, getNode, typeEquality}
+export {print, printTable, log, treeToString, extractNode, getLine, compareNodes, getNode, typeEquality, functionEquality}

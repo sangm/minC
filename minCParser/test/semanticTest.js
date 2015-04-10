@@ -48,6 +48,15 @@ describe("Semantic Analysis", () => {
             })
         })
     }),
+    describe("Overloading functions", () => {
+        it("checks formal decl list for functions", () => {
+            /*
+             expect(() => Parser.semantic("void foo(int c) {} void foo(char d) {}")).to.not.throw();
+             expect(() => Parser.semantic("void foo(int c) {} void foo(int d) {}")).to.throw(/foo has been previously declared/);
+             expect(() => Parser.semantic("void foo(int c) {} void foo(int d, int c) {}")).to.not.throw(/foo has been previously declared/);
+             */
+        })
+    })
     describe("Function declaration/call mismatch", () => {
         it("mismatch argument one arg", () => {
             expect(() => Parser.semantic("void foo(int x) {} int main() { foo(); }")).to.throw(/foo does not match any function/);
@@ -77,13 +86,22 @@ describe("Semantic Analysis", () => {
             expect(() => Parser.semantic("int main() { int a[200]; a['2'] = 2; }")).to.throw('a type does not match')
             // expect(() => Parser.semantic("int main() { int a[200]; a[2] = 2;}")).to.not.throw();
         }),
+        it("index an array with string", () => {
+            expect(() => Parser.semantic("int main() { int a[200]; a[\"2\"] = 2; }")).to.throw('a type does not match')
+        }),
+        it("index an array with int", () => {
+            expect(() => Parser.semantic("int main() { int a[200]; a[2] = 2; }")).to.not.throw();
+            
+        }),
+        it("index an array with another array", () => {
+            expect(() => Parser.semantic("int main() { int b[20]; int a[200]; a[b[20]] = 2; }")).to.not.throw();
+            expect(() => Parser.semantic("int main() { char b[20]; int a[200]; a[b[20]] = 2; }")).to.throw(/a,b type does not match/);
+            expect(() => Parser.semantic("int main() { char c[20]; int b[20]; int a[200]; a[b[c[20]]] = 2; }")).to.throw(/a,b,c type does not match/);
+        })
          it('function with variable', function() {
-            let {ast} = Parser.semantic("int main(int argc, char argv[], string foo) {}");
+             
            // foo() int foo;  
-            // void foo(int c)
-            // void foo(char c)
-            // void foo(int c) void foo(int m) should throw an error
-          // formalDecl variable names do not matter
+             
         });
 
    })

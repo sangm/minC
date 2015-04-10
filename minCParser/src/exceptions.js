@@ -6,7 +6,10 @@ class BaseError extends Error {
         this.name = name;
         if (!node.data) {
             let id = getNode(node, ParserConstants.ID);
-            node.data = id ? id.data : node.type;
+            if (Array.isArray(id)) 
+                node.data = id.map(n => getNode(n, ParserConstants.ID).data)
+            else
+                node.data = id ? id.data : node.type;
         }
         message = `${node.data} ${message} ${getLine(node)}`;
         this.message = message || `${name} Thrown`; 

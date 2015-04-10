@@ -123,9 +123,16 @@ describe("Symbol Table", function() {
         let table = Parser.Parse("int main() {}").table;
         let clean_table = Parser.Parse("void foo() {}").table;
         let global = clean_table.getScope('global');
-        console.log(global);
         expect(global.main).to.be.undefined;
         expect(global.foo.nodeType).to.equal(ParserConstants.funcDecl)
+    }),
+    describe("Handling Duplicate Entries for Symbol Table", () => {
+        it("two functions with the same name, but different types", () => {
+            let {ast, table} = Parser.Parse("void foo(int c) {} void foo(char a) {}");
+            let global = table.getScope(ParserConstants.globalScope);
+            expect(global.foo.length).to.equal(2);
+        });
+
     }),
     describe("Extending the Symbol Table", () => {
         describe("identifers that refer to variables should contain name, type, scope", () => {
