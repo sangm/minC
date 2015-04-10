@@ -124,6 +124,15 @@ class SymbolTable {
         }
         return this.table[scope];
     }
+    
+    getLocalNode(node) {
+        let id = getNode(node, ParserConstants.ID);
+        if (!Array.isArray(id)) {/* poor decision on my part, will refactor getNode to always return an array when I have time */
+            id = [id];
+        }
+        let result = id.map(n => this.temp.filter(t => t.symbol === n.data))
+        return _.flatten(result);
+    }
 
     searchLocalScope(node) {
         let results = this.temp.map(t => {

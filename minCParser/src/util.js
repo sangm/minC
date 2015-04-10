@@ -158,7 +158,7 @@ function getNode(node, type) {
     if (children.length === 1) {
         return children[0];
     }
-    else if (children.length > 1) {
+    else if (children.length >= 1) {
         return children;
     }
     return false;

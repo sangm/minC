@@ -202,6 +202,21 @@ assignStmt
                 if (!result) {
                     throw new Exception.ScopeError($1);
                 }
+                var arrayNode = yy.symbolTable.getLocalNode($1);
+                if (arrayNode) {
+                    arrayNode.map(function(node) {
+                        var arrayDecl = node.type;
+                        var arrayDeclID = Util.getNode(arrayDecl, ParserConstants.ID);
+                        var id = Util.getNode($1, ParserConstants.ID);
+                        var intConst = Util.getNode($1, ParserConstants.intConst);
+                        var arrayLimit = Util.getNode(arrayDecl, ParserConstants.intConst);
+                        if (arrayDeclID.data === id.data) {
+                            if (parseInt(intConst.data) > parseInt(arrayLimit.data)) {
+                                throw new Exception.OutOfBounds($1)
+                            }
+                        }
+                    })
+                }
             }
             $$ = new NonterminalNode(ParserConstants.assignStmt, [$1, $3], @1);
         }

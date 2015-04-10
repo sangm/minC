@@ -51,6 +51,7 @@ describe("Semantic Analysis", () => {
     describe("Overloading functions", () => {
         it("checks formal decl list for functions", () => {
             /*
+            // foo() int foo;  
              expect(() => Parser.semantic("void foo(int c) {} void foo(char d) {}")).to.not.throw();
              expect(() => Parser.semantic("void foo(int c) {} void foo(int d) {}")).to.throw(/foo has been previously declared/);
              expect(() => Parser.semantic("void foo(int c) {} void foo(int d, int c) {}")).to.not.throw(/foo has been previously declared/);
@@ -98,12 +99,17 @@ describe("Semantic Analysis", () => {
             expect(() => Parser.semantic("int main() { char b[20]; int a[200]; a[b[20]] = 2; }")).to.throw(/a,b type does not match/);
             expect(() => Parser.semantic("int main() { char c[20]; int b[20]; int a[200]; a[b[c[20]]] = 2; }")).to.throw(/a,b,c type does not match/);
         })
-         it('function with variable', function() {
-             
-           // foo() int foo;  
-             
-        });
-
-   })
+    }),
+    describe("Indexing an array with an out-of-bounds integer literal", () => {
+        it("handles an int const within the bounds", () => {
+            expect(() => Parser.semantic("int main() { int a[2]; a[0] = 1; a[1] = 2; a[2] = 3; }")).to.not.throw();
+        }),
+        it("throws an error for one off", () => {
+            expect(() => Parser.semantic("int main() { int a[2]; a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 4;}")).to.throw(/a out of bounds/);
+        }),
+        it("throws an error for more than one", () => {
+            expect(() => Parser.semantic("int main() { int a[2]; a[100] = 1; }")).to.throw(/a out of bounds/);
+        })
+    }) 
 })
     

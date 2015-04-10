@@ -18,19 +18,19 @@ class BaseError extends Error {
 
 class ScopeError extends BaseError {
     constructor(node) {
-        super(node, "ScopeError", "is not declared in scope");
+        super(node, "ScopeError", "is not declared in scope")
     }
 }
 
 class MultipleDeclarationError extends BaseError {
     constructor(node) {
-        super(node, "MultipleDeclarationError", "has already been declared");
+        super(node, "MultipleDeclarationError", "has already been declared")
     }
 }
 
 class FunctionMismatchError extends BaseError {
     constructor(node) {
-        super(node, "FunctionMismatchError", "does not match any function");
+        super(node, "FunctionMismatchError", "does not match any function")
     }
 }
 
@@ -40,4 +40,10 @@ class TypeMismatchError extends BaseError {
     }
 }
 
-export {ScopeError, MultipleDeclarationError, FunctionMismatchError, TypeMismatchError}
+class OutOfBounds extends BaseError {
+    constructor(node) {
+        super(node, "OutOfBoundsError", "out of bounds")
+    }
+}
+
+export {ScopeError, MultipleDeclarationError, FunctionMismatchError, TypeMismatchError, OutOfBounds}
