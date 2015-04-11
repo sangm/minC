@@ -13,7 +13,7 @@ class TerminalNode {
         return this.terminal.data;
     }
     getChildren() {
-        return null;
+        return [];
     }
 
     get length() {
@@ -48,6 +48,10 @@ class NonterminalNode {
     get length() {
         return this.children.length;
     }
+}
+
+class Tree {
+    
 }
 
 export {TerminalNode, NonterminalNode}

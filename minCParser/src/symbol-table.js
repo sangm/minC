@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import ParserConstants from './ParserConstants'
 import {print, log, getNode, typeEquality, getType} from './util'
-import { TypeMismatchError, FunctionMismatchError } from './exceptions.js'
+import { MultipleDeclarationError, TypeMismatchError, FunctionMismatchError } from './exceptions.js'
 
 
 
@@ -32,7 +32,7 @@ class SymbolTable {
         if (terminal.type === ParserConstants.typeSpecifier)
             return `${terminal.data} `;
         else if (terminal.type === ParserConstants.ID)
-            return `${terminal.data}`;
+            return ``;
         else if (terminal.type === ParserConstants.arrayDecl) 
             return this.destructArray(terminal);
         else 
@@ -46,7 +46,7 @@ class SymbolTable {
             formalDecl.children.map(terminal => result += this.destructTerminal(terminal));
             result += delimitter;
         });
-        return result.slice(0, -delimitter.length);
+        return result.slice(0, -delimitter.length - 1);
     }
 
     destructNode(node) {
@@ -94,8 +94,13 @@ class SymbolTable {
         // type == actual ast node, deep clone node
         scope = scope || ParserConstants.globalScope;
         this.table[scope] = this.table[scope] || { }
+        if (this.overloading && nodeType === ParserConstants.funcDecl) {
+            let t = this.destructNode(type);
+            symbol = `${symbol}#${t}`
+        }
         if (this.table[scope][symbol]) {
-            let scopeSymbol = this.table[scope][symbol];
+            let node = this.table[scope][symbol].node;
+            throw new MultipleDeclarationError(node)
         }
         this.table[scope][symbol] = this.constructSymbol(symbol, type, nodeType);
     }

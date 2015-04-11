@@ -1,20 +1,19 @@
 # minCParser built with JavaScript (Harmony)
 
-## Directories/Files
-+ ![a](img/tree.png)
+## Driver
++ Usage: node minC.js --file(optional) filename --folding(optional) --overloading(optional)
+
+## Semantic Analysis Notes
++ Allows overloading functions (not 100%). Does not "lookup" correctly(due to not having enough time to correctly parse type), so will throw "Undeclared Error"
++ Cannot handle recursion as of now. When funcCallExpr is evaluted, I am checking to see if the function is declared (it won't, until the function itself has been parsed through)
++ To run unit tests, `npm run test`
++ To build: `npm run build`
+
+### Manifests
 + minCParser/test/ is for unit tests
 + minCParser/src/ contains the actual file before it's transpied
 + minCParser/dist/ contains files that browsers (nowadays) can render
++ minCParser/src/minCParser.jison is the grammar file
++ minCParser/src/symbol-table, minCParser/src/util, is relevant for semantic analysis
 
-## Usage
-+ run `npm run init` in the project root directory
-+ use `node minCParserDrive.js filename` to run a file
-+ run `npm run parser` to convert all src(ES6) files to dist
-
-## Semantic Analysis Notes
-+ To allow overloading functions, my entry in the symbol table is the same as my type 
-+ Currently do not allow array within arrays like a[b[20]]
-
-## Examples
-+ ![ex1](img/ex1.png)
 

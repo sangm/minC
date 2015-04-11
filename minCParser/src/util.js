@@ -6,17 +6,47 @@ import ParserConstants from './ParserConstants'
 const blue = colors.blue;
 const red = colors.red;
 
+const equalTable = {};
+equalTable[ParserConstants.intConst] = 'int';
+equalTable[ParserConstants.charConst] = 'char';
+equalTable[ParserConstants.strConst] = 'string';
+
+function extractTypes(node, table) {
+    if (node.type === ParserConstants.typeSpecifier)
+        return [node.data];
+    if (node.type in equalTable)
+        return [equalTable[node.type]];
+    let types = [];
+    let ids = getNode(node, ParserConstants.ID);
+    if (ids) {
+        if (!Array.isArray(ids)) ids = [ids];
+        types = _.flatten(ids.map(id => {
+            let decls = table.getLocalNode(id);
+            let types = decls.map(decl => {
+                let type = getNode(decl.type, ParserConstants.typeSpecifier);
+                return type.data;
+            })
+            return types;
+        }));
+    }
+    return types;
+}
+
 function getType(node) {
     // if it has charConst, intConst, strConst
     if (node.type === ParserConstants.intConst || node.type === ParserConstants.strConst ||
         node.type === ParserConstants.charConst) {
        return node; 
     }
+    if (node.terminal)
+        return false;
     let result = getNode(node, ParserConstants.intConst) ||
                  getNode(node, ParserConstants.strConst) ||
                  getNode(node, ParserConstants.charConst);
     if (!result) {
-        console.warn("getType returned null");
+        result = getNode(node, ParserConstants.typeSpecifier);
+        if (!result)
+            console.warn('getType returns null')
     }
     return result;
 }
@@ -153,13 +183,11 @@ function getID(node) {
 
 function getNode(node, type) {
     if (node == null) {
-        console.warn("getNode returned null");
         return false;
     }
     if (node.type === type)
         return node;
     if (!node.children) {
-        console.warn("node in getNode does not have children");
         return false;
     }
     let children = _.flatten(node.children.map(c => {
@@ -226,4 +254,4 @@ function compareNodes(funcDecl, funcCallExpr) {
     return false;
 }
 
-export {print, printTable, log, treeToString, extractNode, getLine, compareNodes, getNode, typeEquality, functionEquality, getType}
+export {print, printTable, log, treeToString, extractNode, getLine, compareNodes, getNode, typeEquality, functionEquality, getType, extractTypes}

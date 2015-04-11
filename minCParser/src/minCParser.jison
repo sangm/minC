@@ -36,9 +36,6 @@ decl
             yy.symbolTable.addTemps(ParserConstants.globalScope);
         }
     | funcDecl
-        {
-            
-        }
     ;
 
 varDecl
@@ -198,47 +195,22 @@ assignStmt
                     throw new Exception.ScopeError($1);
                 }
                 var nodes = yy.symbolTable.getLocalNode($1);
-                if ($1.type === ParserConstants.arrayDecl) {
-                    var arrayNode = nodes;
-                    if (arrayNode) {
-                        arrayNode.map(function(node) {
-                            var arrayDecl = node.type;
-                            var arrayDeclID = Util.getNode(arrayDecl, ParserConstants.ID);
-                            var id = Util.getNode($1, ParserConstants.ID);
-                            var intConst = Util.getNode($1, ParserConstants.intConst);
-                            var arrayLimit = Util.getNode(arrayDecl, ParserConstants.intConst);
-                            if (arrayDeclID.data === id.data) {
-                                if (parseInt(intConst.data) > parseInt(arrayLimit.data)) {
-                                    throw new Exception.OutOfBounds($1)
-                                }
-                            }
-                        })
-                    }
-                }
-                var f = yy.symbolTable.getLocalNode($1);
-                f.map(function(n) {
+                
+                nodes.map(function(n) {
+                    /* varDecl is given int a; int b; a = b; --> a */
                     var varDecl = n.type;
+                    var varID = Util.getNode(varDecl, ParserConstants.ID);
                     var varType = Util.getNode(varDecl, ParserConstants.typeSpecifier);
-                    if ($3.type === ParserConstants.ID || $3.type === ParserConstants.arrayDecl) {
-                        expressions = yy.symbolTable.getLocalNode($3);
-                        expressions.map(function(expr) {
-                            expr = expr.type;
-                            expressionType = Util.getNode(expr, ParserConstants.typeSpecifier);
-                            var result = varType.data === expressionType.data;
-                            
-                            if (!result) {
-                                
-                                throw new Exception.TypeMismatchError($1)
-                            }
-                        })
-                    }
-                    else {
-                        var expressionType = Util.getType($3);
-                        var result = Util.typeEquality(varType, expressionType);
-                        if (!result) {
+                    
+                    /* extract out types from $3 whether it be variable or constant (combination of both) */
+                    /* int a; a = 2; a = b; a = 2 + b; */
+                    var types = Util.extractTypes($3, yy.symbolTable); // returns an array of tyes ['int', 'int', 'char']
+                    // check if varType.data matches with every single type in types
+                    types.map(function(type) {
+                        if (varType.data !== type) {
                             throw new Exception.TypeMismatchError($1)
                         }
-                    }
+                    });
                 })
             }
             $$ = new NonterminalNode(ParserConstants.assignStmt, [$1, $3], @1);
@@ -278,6 +250,27 @@ var
     | ID LSQ_BRKT addExpr RSQ_BRKT
         {
             $1 = new TerminalNode(ParserConstants.ID, $1, @1);
+            if (yy.semantic) {
+                var arrayDecls = yy.symbolTable.getLocalNode($1);
+                arrayDecls.map(function(arrayDecl) {
+                    arrayDecl = arrayDecl.type;
+                    var intConst = Util.getNode($3, ParserConstants.intConst);
+                    var arrayLimit = Util.getNode(arrayDecl, ParserConstants.intConst);
+                    if (parseInt(intConst.data) >  parseInt(arrayLimit.data)) {
+                        throw new Exception.OutOfBounds($1)
+                    }
+                })
+                    
+                // var arrayLimit = Util.getNode(varDecl, ParserConstants.intConst);
+                /*
+                  
+                */
+                var types = Util.extractTypes($3, yy.symbolTable); // returns an array of tyes ['int', 'int', 'char']
+                types.map(function(type) {
+                    if (type !== 'int')
+                        throw new Exception.TypeMismatchError($1);
+                })
+            }
             $$ = new NonterminalNode(ParserConstants.arrayDecl, [$1, $3], @1);
         }
     ;
@@ -302,12 +295,24 @@ relop
     ;
 
 addExpr
-    : term
+    : term 
     | addExpr addop term
         {
-            $2.addChild($1);
-            $2.addChild($3);
-            $$ = $2;
+            if (yy.folding && $1.type === ParserConstants.intConst && $3.type === ParserConstants.intConst) {
+                var result; 
+                if ($2.type === ParserConstants.addOp) {
+                    result = $1.data + $3.data;
+                }
+                if ($2.type === ParserConstants.subOp) {
+                    result = $1.data - $3.data;
+                }
+                $$ = new TerminalNode(ParserConstants.intConst, result, @1);
+            }
+            else {
+                $2.addChild($1);
+                $2.addChild($3);
+                $$ = $2;
+            }
         }
     ;
 
@@ -320,9 +325,25 @@ term
     : factor
     | term mulop factor
         {
-            $2.addChild($1);
-            $2.addChild($3);
-            $$ = $2;
+            if (yy.folding && $1.type === ParserConstants.intConst && $3.type === ParserConstants.intConst) {
+                if ($2.type === ParserConstants.divOp) {
+                    try {
+                        result = $1.data / $3.data;
+                    }
+                    catch (err) {
+                        console.log(err);
+                    }
+                }
+                if ($2.type === ParserConstants.mulOp) {
+                    result = $1.data * $3.data;
+                }
+                $$ = new TerminalNode(ParserConstants.intConst, result, @1);
+            }
+            else {
+                $2.addChild($1);
+                $2.addChild($3);
+                $$ = $2;
+            }
         }
     ;
 
