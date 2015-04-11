@@ -190,11 +190,6 @@ assignStmt
     : var OPER_ASGN expression SEMICLN
         {
             if (yy.semantic) {
-                var id;
-                if ($1.type !== ParserConstants.ID) 
-                    id = Util.getNode($1, ParserConstants.ID);
-                else
-                    id = $1;
                 var result = yy.symbolTable.lookup($1, ParserConstants.localScope);
                 if (result.error) {
                     throw new result.error($1);
@@ -202,21 +197,49 @@ assignStmt
                 if (!result) {
                     throw new Exception.ScopeError($1);
                 }
-                var arrayNode = yy.symbolTable.getLocalNode($1);
-                if (arrayNode) {
-                    arrayNode.map(function(node) {
-                        var arrayDecl = node.type;
-                        var arrayDeclID = Util.getNode(arrayDecl, ParserConstants.ID);
-                        var id = Util.getNode($1, ParserConstants.ID);
-                        var intConst = Util.getNode($1, ParserConstants.intConst);
-                        var arrayLimit = Util.getNode(arrayDecl, ParserConstants.intConst);
-                        if (arrayDeclID.data === id.data) {
-                            if (parseInt(intConst.data) > parseInt(arrayLimit.data)) {
-                                throw new Exception.OutOfBounds($1)
+                var nodes = yy.symbolTable.getLocalNode($1);
+                if ($1.type === ParserConstants.arrayDecl) {
+                    var arrayNode = nodes;
+                    if (arrayNode) {
+                        arrayNode.map(function(node) {
+                            var arrayDecl = node.type;
+                            var arrayDeclID = Util.getNode(arrayDecl, ParserConstants.ID);
+                            var id = Util.getNode($1, ParserConstants.ID);
+                            var intConst = Util.getNode($1, ParserConstants.intConst);
+                            var arrayLimit = Util.getNode(arrayDecl, ParserConstants.intConst);
+                            if (arrayDeclID.data === id.data) {
+                                if (parseInt(intConst.data) > parseInt(arrayLimit.data)) {
+                                    throw new Exception.OutOfBounds($1)
+                                }
                             }
-                        }
-                    })
+                        })
+                    }
                 }
+                var f = yy.symbolTable.getLocalNode($1);
+                f.map(function(n) {
+                    var varDecl = n.type;
+                    var varType = Util.getNode(varDecl, ParserConstants.typeSpecifier);
+                    if ($3.type === ParserConstants.ID || $3.type === ParserConstants.arrayDecl) {
+                        expressions = yy.symbolTable.getLocalNode($3);
+                        expressions.map(function(expr) {
+                            expr = expr.type;
+                            expressionType = Util.getNode(expr, ParserConstants.typeSpecifier);
+                            var result = varType.data === expressionType.data;
+                            
+                            if (!result) {
+                                
+                                throw new Exception.TypeMismatchError($1)
+                            }
+                        })
+                    }
+                    else {
+                        var expressionType = Util.getType($3);
+                        var result = Util.typeEquality(varType, expressionType);
+                        if (!result) {
+                            throw new Exception.TypeMismatchError($1)
+                        }
+                    }
+                })
             }
             $$ = new NonterminalNode(ParserConstants.assignStmt, [$1, $3], @1);
         }

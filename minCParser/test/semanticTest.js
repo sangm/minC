@@ -110,6 +110,29 @@ describe("Semantic Analysis", () => {
         it("throws an error for more than one", () => {
             expect(() => Parser.semantic("int main() { int a[2]; a[100] = 1; }")).to.throw(/a out of bounds/);
         })
-    }) 
+    }),
+    describe("Type mismatch in assignments.", () => {
+        it("should not throw an error for right types", () => {
+            expect(() => Parser.semantic("int main() { int a; char b; string c; a = 1; b = '1'; c = \"123\"; }")).to.not.throw();
+        }),
+        it("throws an error for int type that is not int", () => {
+            expect(() => Parser.semantic("int main() { int a; a = '1'; }")).to.throw(/a type does not match/);
+            expect(() => Parser.semantic("int main() { int a; a = \"1\"; }")).to.throw(/a type does not match/);
+        }),
+        it("does not throw an error for int type that is int variable", () => {
+            expect(() => Parser.semantic("int main() { int a; int b; a = b; }")).to.not.throw(/a type does not match/);
+            expect(() => Parser.semantic("int main() { int a; int b[20]; a = b[0]; }")).to.not.throw(/a type does not match/);
+        }),
+        it("throws an error for int type that is not int variable", () => {
+            expect(() => Parser.semantic("int main() { int a; char b; a = b;}")).to.throw(/a type does not match/);
+            expect(() => Parser.semantic("int main() { int a; char b[20]; a = b[0]; }")).to.throw(/a type does not match/);
+        }),
+        it("tries for other types other than int", () => {
+            expect(() => Parser.semantic("int main() { int a; string b; a = b;}")).to.throw(/a type does not match/);
+            expect(() => Parser.semantic("int main() { int a; void b; a = b;}")).to.throw(/a type does not match/);
+            expect(() => Parser.semantic("int main() { int a; string b[20]; a = b[0]; }")).to.throw(/a type does not match/);
+            expect(() => Parser.semantic("int main() { int a; void b[20]; a = b[0]; }")).to.throw(/a type does not match/);
+        })
+    })
 })
     

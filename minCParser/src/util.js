@@ -6,6 +6,21 @@ import ParserConstants from './ParserConstants'
 const blue = colors.blue;
 const red = colors.red;
 
+function getType(node) {
+    // if it has charConst, intConst, strConst
+    if (node.type === ParserConstants.intConst || node.type === ParserConstants.strConst ||
+        node.type === ParserConstants.charConst) {
+       return node; 
+    }
+    let result = getNode(node, ParserConstants.intConst) ||
+                 getNode(node, ParserConstants.strConst) ||
+                 getNode(node, ParserConstants.charConst);
+    if (!result) {
+        console.warn("getType returned null");
+    }
+    return result;
+}
+
 function functionEquality(a, b) {
     // a.id === b.id && a.[formalDeclList].type === b.[formalDeclList].type 
     if (a == null || b == null) {
@@ -91,6 +106,7 @@ function print(ast, level = 0) {
 function treeToString(ast, level = 0) {
     let result;
     let string = Array(level+1).join(blue("\u2022 "));
+
     if (ast.terminal) {
         return string + ast.terminal.type + ' ' + ast.terminal.data + ' ' + getLine(ast) + '\n';
     } 
@@ -136,12 +152,15 @@ function getID(node) {
 }
 
 function getNode(node, type) {
-    if (node == null)
-        return "getNode returned null";
+    if (node == null) {
+        console.warn("getNode returned null");
+        return false;
+    }
     if (node.type === type)
         return node;
     if (!node.children) {
-        return "node in getNode does not have children";
+        console.warn("node in getNode does not have children");
+        return false;
     }
     let children = _.flatten(node.children.map(c => {
         if (c.type === ParserConstants.arrayDecl) {
@@ -165,15 +184,18 @@ function getNode(node, type) {
 }
 
 function typeEquality(a, b) {
-    if (ParserConstants.intConst === a || ParserConstants.intConst === b) {
-        return (a === 'int' || b === 'int');
-    }
-    else if (ParserConstants.charConst === a || ParserConstants.charConst === b) {
-        return (a === 'char' || b === 'char');
-    }
-    else if (ParserConstants.strConst === a || ParserConstants.strConst === b) {
-        return (a === 'string' || b === 'string');
-    }
+    let equalTable = {};
+    equalTable[ParserConstants.intConst] = 'int';
+    equalTable[ParserConstants.charConst] = 'char';
+    equalTable[ParserConstants.strConst] = 'string';
+    if (a.type in equalTable)
+        return equalTable[a.type] === b.data;
+    if (b.type in equalTable)
+        return equalTable[b.type] === a.data;
+    if (a in equalTable)
+        return equalTable[a] === b;
+    else
+        return equalTable[b] === a;
 }
 
 function compareNodes(funcDecl, funcCallExpr) {
@@ -204,4 +226,4 @@ function compareNodes(funcDecl, funcCallExpr) {
     return false;
 }
 
-export {print, printTable, log, treeToString, extractNode, getLine, compareNodes, getNode, typeEquality, functionEquality}
+export {print, printTable, log, treeToString, extractNode, getLine, compareNodes, getNode, typeEquality, functionEquality, getType}

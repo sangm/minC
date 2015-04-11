@@ -1,18 +1,9 @@
 import _ from 'lodash'
 import ParserConstants from './ParserConstants'
-import {print, log, getNode, typeEquality} from './util'
+import {print, log, getNode, typeEquality, getType} from './util'
 import { TypeMismatchError, FunctionMismatchError } from './exceptions.js'
 
-function getType(node) {
-    // if it has charConst, intConst, strConst
-    let result = getNode(node, ParserConstants.intConst) ||
-                 getNode(node, ParserConstants.strConst) ||
-                 getNode(node, ParserConstants.charConst);
-    if (!result) {
-        console.warn("getType returned null");
-    }
-    return result;
-}
+
 
 function idEquality(a, b) {
     if (a === b) return false;
@@ -78,6 +69,11 @@ class SymbolTable {
         else if (node.type === ParserConstants.arrayDecl) {
             type += this.destructTerminal(node);
         }
+        else if (node.type === ParserConstants.varDecl || node.type === ParserConstants.formalDecl) {
+            let nodeType = getNode(node, ParserConstants.typeSpecifier);
+            let id = getNode(node, ParserConstants.ID);
+            type += `${nodeType.data} ${id.data}`
+        }
         return type;
     }
     
@@ -106,10 +102,8 @@ class SymbolTable {
     
     constructSymbol(symbol, type, nodeType) {
         let node;
-        if (nodeType) {
-            node = type;
-            type = this.destructNode(type);
-        }
+        node = type;
+        type = this.destructNode(type);
         let symbolObj = {type: type}
         if (nodeType) {
             symbolObj["nodeType"] = nodeType;
@@ -175,11 +169,13 @@ class SymbolTable {
             else if (results.length === 1) {
                 if (node.type === ParserConstants.arrayDecl) {
                     var returnObj = {};
-                    let result = results[0].type;
+                    let result = results[0];
+                    [result] = this.getLocalNode(result);
+                    result = result.type
                     let resultType = getNode(result, ParserConstants.typeSpecifier);
                     let nodeType = getType(node);
                     returnObj['scope'] = ParserConstants.localScope;
-                    returnObj['node'] = results[0];
+                    returnObj['node'] = result;
                     if (nodeType.type !== ParserConstants.intConst) {
                         returnObj['error'] = TypeMismatchError;
                     }

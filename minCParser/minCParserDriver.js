@@ -10,17 +10,12 @@ var blue = colors.blue;
 var red = colors.red;
 
 function handleInput(data) {
-    try {
         var parser = minCParser.semantic(data);
         var ast = parser.ast;
         var symTable = parser.table.table;
         console.log(colors.magenta(data));
         printTable(symTable);
         print(ast);
-    }
-    catch(err) {
-        console.log(err);
-    }
 }
 
 if (process.argv.length <= 2) {
