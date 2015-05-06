@@ -14,7 +14,14 @@ function getTokens(lexer) {
         }
         else {
             temp = {}
-            temp[result] = lexer.yytext
+            if (typeof result === 'object') {
+                var key = Object.keys(result)[0];
+                temp[key] = result[key];
+            }
+            else {
+                temp[result] = lexer.yytext
+            }
+
             results.push(temp);
         }
         
