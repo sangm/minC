@@ -184,9 +184,7 @@ class CodeGenerator {
         this.globalVariables(ast);
 
         // save $a0 as its used as the accumulator
-        this.push(this.accu);
         this.generateCode(ast, table);
-        this.pop(this.accu);
         this.emit(ParserConstants.expression, 'add', '$v0', '$0', 10);
         this.emit(ParserConstants.SYSCALL);
         return this.nodes;
@@ -206,6 +204,35 @@ class CodeGenerator {
             this.generateCode(e2, table);
             this.pop();
             this.accumulator(type);
+            return;
+        }
+        else if (type === ParserConstants.loopStmt) {
+            /* while (e1 pred e2) e3 */
+            let loopStmt = extractNode(ast, ParserConstants.kwdWhile),
+                predicate = loopStmt.children[0],
+                e1 = predicate.children[0],
+                e2 = predicate.children[1],
+                e3 = loopStmt.children[1],
+                beginLoop = this.nextLabel(),
+                enterLoop = this.nextLabel(),
+                endLoop = this.nextLabel();
+
+            this.emit(ParserConstants.LABEL, beginLoop);
+            this.generateCode(e1, table);
+            this.push(this.accu);
+            this.generateCode(e2, table);
+            this.pop();
+            this.emit(ParserConstants.condStmt, 
+                      INSTRUCTIONS[predicate.type],
+                      '$t0',
+                      this.accu,
+                      enterLoop);
+            this.emit(ParserConstants.JUMP, endLoop);
+            this.emit(ParserConstants.LABEL, enterLoop);
+            this.generateCode(e3, table)
+            this.emit(ParserConstants.JUMP, beginLoop);
+            this.emit(ParserConstants.LABEL, endLoop);
+            return; 
         }
         else if (type === ParserConstants.condStmt) {
             /* if (e1 pred e2) e3 else e4 */
@@ -228,8 +255,8 @@ class CodeGenerator {
 
             this.emit(ParserConstants.condStmt, 
                       INSTRUCTIONS[predicate.type],
-                      this.accu,
                       '$t0',
+                      this.accu,
                       trueBranch)
             this.emit(ParserConstants.LABEL, falseBranch);
             this.generateCode(e4);
@@ -252,7 +279,7 @@ class CodeGenerator {
             return; 
         }
         else if (type === ParserConstants.intConst) {
-            this.push(ast);
+            this.emit(ParserConstants.expression, "add", this.accu, '$0', ast.data)
             return;
         }
         let children = ast.getChildren();
@@ -260,60 +287,10 @@ class CodeGenerator {
             this.generateCode(child, table);
         }
     }
-    /*
-    generateCode(ast, table) {
-        if (ast == null)
-            return;
-        let type = ast.type;
-        if (type === ParserConstants.funcDecl) {
-            let id = extractNode(ast, ParserConstants.ID);
-            this.currentScope = id.data;
-        }
-        if (addExpr.findIndex(e => e === type) !== -1) {
 
-            this.expr(ast, table);
-            this.accumulator(type);
-        }
-        else if (type === ParserConstants.funcCallExpr) {
-            let id = extractNode(ast, ParserConstants.ID),
-                arg;
-            if (id.data === ParserConstants.printFunc) {
-                // printing integer is li $v0, 1; syscall
-                arg = extractNode(ast, ParserConstants.intConst)
-                this.emit(ParserConstants.expression, 'add', '$a0', '$0', arg.data)
-                this.emit(ParserConstants.expression, "add", '$v0', '$0', 1)
-                this.emit(ParserConstants.SYSCALL)
-            }
-            return; 
-        }
-        else if (type === ParserConstants.kwdIf) {
-            let predicate = ast.children[0];
-            return this.expr(predicate, table)
-        }
-        else if (type === ParserConstants.condStmt) {
-            
-            let ifStmt = extractNode(ast, ParserConstants.kwdIf);
-            this.generateCode(ifStmt, table);
-            // will refactor after I get beq done
-            let elseStmt = extractNode(ast, ParserConstants.kwdElse);
-            let predicate = ifStmt.children[0];
-            
-            
-            return; 
-        }
-
-        
-    }
-    */
-    
     push(node) {
-        if (node === this.accu) {
-            this.emit(ParserConstants.STORE, this.accu, '$sp', 0)
-        }
-        else {
-            this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', -4)
-            this.emit(ParserConstants.expression, 'add', this.accu, '$0', node.data)
-        }
+        this.emit(ParserConstants.STORE, this.accu, '$sp', 0)
+        this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', -4)
     }
     
     pop(node) {
@@ -329,39 +306,6 @@ class CodeGenerator {
     
     accumulator(type) {
         this.emit(ParserConstants.expression, INSTRUCTIONS[type], this.accu, '$t0', this.accu)
-    }
-    
-    expr(node, table) {
-        if (node == null)
-            return; 
-        let type = node.type,
-            register,
-            a,
-            b,
-            leftChild, rightChild;
-        switch(type) {
-        case ParserConstants.intConst:
-            /* Push onto stop */
-            this.push(node);
-            break;
-        case ParserConstants.ID:
-            a = this.base(node);
-            b = this.offset(node, table);
-            break;
-        default:
-            leftChild = node.children[0];
-            rightChild = node.children[1];
-            a = this.expr(leftChild, table);
-            this.push(this.accu);
-            b = this.expr(rightChild, table);
-            this.pop();
-            break;
-        }
-        return register;
-    }
-    
-    assign(node, table) {
-        
     }
 }
 

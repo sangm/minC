@@ -11,6 +11,14 @@
 
 ## Code Generation Notes
 + Global variables will get initialized to 0
++ Target Architecture: MIPS
+
+
+### Register Allocation
++ I've decided to implement a stack machine instead of register based.
++ Invariants of the Stack Machine
++ + register `$a1` holds the top of the stack
++ + rest of the stack is maintained by the $sp pointer
 
 ### Manifests
 + minCParser/test/ is for unit tests
