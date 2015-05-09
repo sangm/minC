@@ -40,6 +40,26 @@ class ASM {
         }
     }
     
+    static syscall() {
+        return {
+            type: ParserConstants.SYSCALL
+        }
+    }
+    
+    static label(lab) {
+        return {
+            type: ParserConstants.LABEL,
+            label: lab
+        }
+    }
+    
+    static jump(label) {
+        return {
+            type: ParserConstants.JUMP,
+            label: label
+        }
+    }
+    
     static generate(asm) {
         let assembly = [],
             line;
@@ -56,11 +76,21 @@ class ASM {
             case ParserConstants.LOAD:
                 return `lw ${node.register}, ${node.offset}(${node.base})`
                 break;
+            case ParserConstants.SYSCALL:
+                return `syscall`
+                break;
+            case ParserConstants.LABEL:
+                return `${node.label}:`
+                break;
+            case ParserConstants.JUMP:
+                return `j ${node.label}`
+                break;
             default:
                 return `${node.instruction}, ${node.a}, ${node.b}, ${node.c}`
                 break;
             }
         }))
+
         return assembly.join('\n')
     }
 }

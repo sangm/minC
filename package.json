@@ -9,7 +9,8 @@
     "colors": "^1.0.3",
     "jison": "^0.4.15",
     "jison-lex": "sangm/jison-lex",
-    "lodash": "^3.5.0"
+    "lodash": "^3.5.0",
+    "string-template": "^0.2.1"
   },
   "devDependencies": {
     "babel": "^4.7.4",

@@ -53,13 +53,35 @@ INSTRUCTIONS[ParserConstants.subOp] = "sub"
 INSTRUCTIONS[ParserConstants.divOp] = "div"
 INSTRUCTIONS[ParserConstants.mulOp] = "mul"
 
+INSTRUCTIONS[ParserConstants.eqOp] = "beq"
+INSTRUCTIONS[ParserConstants.neqOp] = "bne"
+INSTRUCTIONS[ParserConstants.gteOp] = "bge"
+INSTRUCTIONS[ParserConstants.gtOp] = "bgt"
+INSTRUCTIONS[ParserConstants.lteOp] = "ble"
+INSTRUCTIONS[ParserConstants.ltOp] = "blt"
+
 
 const GLOBAL_VARIABLES_INIT = 0;
-const addExpr = [ParserConstants.addOp, ParserConstants.subOp, ParserConstants.divOp, ParserConstants.mulOp];
+const addExpr = [
+    ParserConstants.addOp, 
+    ParserConstants.subOp,
+    ParserConstants.divOp, 
+    ParserConstants.mulOp
+];
+const BRANCH_PREDICATES = [
+    ParserConstants.eqOp,
+    ParserConstants.neqOp,
+    ParserConstants.gteOp,
+    ParserConstants.gtOp,
+    ParserConstants.ltOp,
+    ParserConstants.lteOp,
+]
+
 
 class CodeGenerator {
 
     constructor() {
+        this.labelCounter = 0;
         this.nodes = [];
         this.register = 7;
         this.offsetCounter = 0;
@@ -70,7 +92,8 @@ class CodeGenerator {
     emit(type, ...rest) {
         let id, size, val,
             dest, base, offset,
-            instr, register, a, b;
+            instr, register, a, b,
+            label;
         switch(type) {
         case ParserConstants.globalScope:
             [id, size, val] = rest;
@@ -84,10 +107,27 @@ class CodeGenerator {
             [dest, base, offset] = rest;
             this.nodes.push(ASM.store(dest, base, offset))
             break;
+        case ParserConstants.SYSCALL:
+            this.nodes.push(ASM.syscall());
+            break;
+        case ParserConstants.LABEL:
+            [label] = rest;
+            this.nodes.push(ASM.label(label))
+            break;
+        case ParserConstants.JUMP:
+            [label] = rest;
+            this.nodes.push(ASM.jump(label))
+            break;
         default:
             [instr, register, a, b] = rest;
             this.nodes.push(ASM.arith(instr, register, a, b))
         }
+    }
+    
+    nextLabel() {
+        let label = `ll${this.labelCounter}`;
+        this.labelCounter += 1;
+        return label;
     }
     
     nextReg() {
@@ -146,10 +186,81 @@ class CodeGenerator {
         // save $a0 as its used as the accumulator
         this.push(this.accu);
         this.generateCode(ast, table);
-        this.pop();
+        this.pop(this.accu);
+        this.emit(ParserConstants.expression, 'add', '$v0', '$0', 10);
+        this.emit(ParserConstants.SYSCALL);
         return this.nodes;
     }
     
+    generateCode(ast, table) {
+        if (ast == null)
+            return;
+
+        let type = ast.type;
+
+        if (addExpr.findIndex(e => e === type) !== -1) {
+            let e1 = ast.children[0],
+                e2 = ast.children[1];
+            this.generateCode(e1, table);
+            this.push(this.accu);
+            this.generateCode(e2, table);
+            this.pop();
+            this.accumulator(type);
+        }
+        else if (type === ParserConstants.condStmt) {
+            /* if (e1 pred e2) e3 else e4 */
+            
+            let ifStmt = extractNode(ast, ParserConstants.kwdIf),
+                elseStmt = extractNode(ast, ParserConstants.kwdElse),
+                predicate = ifStmt.children[0],
+                e1 = predicate.children[0],
+                e2 = predicate.children[1],
+                e3 = ifStmt.children[1],
+                e4 = elseStmt ? elseStmt.children[0] : null,
+                trueBranch = this.nextLabel(),
+                falseBranch = this.nextLabel(),
+                endBranch = this.nextLabel();
+
+            this.generateCode(e1, table);
+            this.push(this.accu);
+            this.generateCode(e2, table);
+            this.pop();
+
+            this.emit(ParserConstants.condStmt, 
+                      INSTRUCTIONS[predicate.type],
+                      this.accu,
+                      '$t0',
+                      trueBranch)
+            this.emit(ParserConstants.LABEL, falseBranch);
+            this.generateCode(e4);
+            this.emit(ParserConstants.JUMP, endBranch);
+            this.emit(ParserConstants.LABEL, trueBranch);
+            this.generateCode(e3);
+            this.emit(ParserConstants.LABEL, endBranch);
+            return;
+        }
+        else if (type === ParserConstants.funcCallExpr) {
+            let id = extractNode(ast, ParserConstants.ID),
+                arg;
+            if (id.data === ParserConstants.printFunc) {
+                // printing integer is li $v0, 1; syscall
+                arg = extractNode(ast, ParserConstants.intConst)
+                this.emit(ParserConstants.expression, 'add', '$a0', '$0', arg.data)
+                this.emit(ParserConstants.expression, "add", '$v0', '$0', 1)
+                this.emit(ParserConstants.SYSCALL)
+            }
+            return; 
+        }
+        else if (type === ParserConstants.intConst) {
+            this.push(ast);
+            return;
+        }
+        let children = ast.getChildren();
+        for (let child of children) {
+            this.generateCode(child, table);
+        }
+    }
+    /*
     generateCode(ast, table) {
         if (ast == null)
             return;
@@ -159,49 +270,75 @@ class CodeGenerator {
             this.currentScope = id.data;
         }
         if (addExpr.findIndex(e => e === type) !== -1) {
-            return this.expr(ast, table);
+
+            this.expr(ast, table);
+            this.accumulator(type);
         }
-        else if (type === ParserConstants.assignStmt) {
-            /*
-            let leftChild = ast.children[0];
-            let rightChild = ast.children[1];
-            let a = this.base(leftChild);
-            let b = this.offset(leftChild, table);
-            let register = this.expr(rightChild, table);
-            */
-            return;
+        else if (type === ParserConstants.funcCallExpr) {
+            let id = extractNode(ast, ParserConstants.ID),
+                arg;
+            if (id.data === ParserConstants.printFunc) {
+                // printing integer is li $v0, 1; syscall
+                arg = extractNode(ast, ParserConstants.intConst)
+                this.emit(ParserConstants.expression, 'add', '$a0', '$0', arg.data)
+                this.emit(ParserConstants.expression, "add", '$v0', '$0', 1)
+                this.emit(ParserConstants.SYSCALL)
+            }
+            return; 
+        }
+        else if (type === ParserConstants.kwdIf) {
+            let predicate = ast.children[0];
+            return this.expr(predicate, table)
+        }
+        else if (type === ParserConstants.condStmt) {
+            
+            let ifStmt = extractNode(ast, ParserConstants.kwdIf);
+            this.generateCode(ifStmt, table);
+            // will refactor after I get beq done
+            let elseStmt = extractNode(ast, ParserConstants.kwdElse);
+            let predicate = ifStmt.children[0];
+            
+            
+            return; 
         }
 
-        let children = ast.getChildren();
-        for (let child of children) {
-            this.generateCode(child, table);
-        }
+        
     }
+    */
     
     push(node) {
         if (node === this.accu) {
             this.emit(ParserConstants.STORE, this.accu, '$sp', 0)
         }
         else {
-            this.emit(ParserConstants.EXPRESSION, 'addiu', '$sp', '$sp', -4)
-            this.emit(ParserConstants.EXPRESSION, 'add', this.accu, '$0', node.data)
+            this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', -4)
+            this.emit(ParserConstants.expression, 'add', this.accu, '$0', node.data)
         }
     }
     
     pop(node) {
-        this.emit(ParserConstants.LOAD, '$t0', '$sp', 4)
-        this.emit(ParserConstants.EXPRESSION, 'addiu', '$sp', '$sp', 4)
+        if (node === this.accu) {
+            this.emit(ParserConstants.LOAD, this.accu, '$sp', 0)
+        }
+        else {
+            this.emit(ParserConstants.LOAD, '$t0', '$sp', 4)
+            this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', 4)
+        }
+        
     }
-
+    
     accumulator(type) {
-        this.emit(ParserConstants.EXPRESSION, INSTRUCTIONS[type], this.accu, '$t0', this.accu)
+        this.emit(ParserConstants.expression, INSTRUCTIONS[type], this.accu, '$t0', this.accu)
     }
     
     expr(node, table) {
+        if (node == null)
+            return; 
         let type = node.type,
             register,
             a,
-            b;
+            b,
+            leftChild, rightChild;
         switch(type) {
         case ParserConstants.intConst:
             /* Push onto stop */
@@ -212,13 +349,12 @@ class CodeGenerator {
             b = this.offset(node, table);
             break;
         default:
-            let leftChild = node.children[0];
-            let rightChild = node.children[1];
+            leftChild = node.children[0];
+            rightChild = node.children[1];
             a = this.expr(leftChild, table);
             this.push(this.accu);
             b = this.expr(rightChild, table);
             this.pop();
-            this.accumulator(type);
             break;
         }
         return register;

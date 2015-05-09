@@ -9,7 +9,6 @@ gulp.task('parser', function() {
     return gulp.src('minCParser/src/*.js')
                .pipe(babel()).on('error', function(e) { 
                    gutil.log(e); 
-                   this.end();
                })
                .pipe(uglify())
                .pipe(gulp.dest('minCParser/dist'));
@@ -29,6 +28,12 @@ gulp.task('lexerTest', function() {
                    this.end();
                }))
 });
+gulp.task('genTest', function() {
+    gulp.src('minCParser/test/codeGenTest.js')
+        .pipe(mocha({reporter: 'spec'}, function(e) {
+            gutil.log(e);
+        }))
+})
 
 gulp.task('test', ['parserTest', 'lexerTest']);
 
@@ -36,6 +41,10 @@ gulp.task('watch', function() {
     gulp.watch(['minCParser/**/*.js', 'minCParser/**/*.jison'], ['parserTest']);
     gulp.watch(['minCLexer/**/*.js'], ['lexerTest']);
 });
+
+gulp.task('gen', function() {
+    gulp.watch('minCParser/**/*', ['parser'])
+})
 
 gulp.task('build', function() {
     gulp.watch(['minCParser/**/*'], ['parser']);

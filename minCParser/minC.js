@@ -13,17 +13,24 @@ var printTable = require('./dist/util.js').printTable;
 var Table = require('cli-table');
 var readline = require('readline');
 
+var codeGen = require('./dist/code-gen.js')
+
 console.log(blue("Usage: node minC.js --file(optional) filename --folding(optional) "));
 
 function handleInput(data) {
     try {
-        var options = args;
         var parser = minCParser.semantic(data, args);
         var ast = parser.ast;
         var symTable = parser.table.table;
         console.log(colors.magenta(data));
         printTable(symTable);
         print(ast);
+        if (args["asm"]) {
+            // do code generation here
+            var asm = codeGen.generate(ast, symTable);
+            console.log(asm);
+            
+        }
     }
     catch(err) {
         console.log(red(err));

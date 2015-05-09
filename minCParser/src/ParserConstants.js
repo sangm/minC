@@ -42,5 +42,9 @@ export default {
     ID: 'ID',
     
     STORE: 'STORE',
-    LOAD: 'LOAD'
+    LOAD: 'LOAD',
+    SYSCALL: 'SYSCALL',
+    LABEL: 'LABEL',
+    JUMP: 'JUMP',
+    printFunc: "output",
 }; 

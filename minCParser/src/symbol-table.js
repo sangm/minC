@@ -5,7 +5,7 @@ import {NonterminalNode, TerminalNode} from './tree'
 import { MultipleDeclarationError, TypeMismatchError, FunctionMismatchError } from './exceptions.js'
 
 
-const printFunction = "output"
+const printFunction = ParserConstants.printFunc;
 
 function idEquality(a, b) {
     if (a === b) return false;

@@ -9,11 +9,15 @@
 + To run unit tests, `npm run test`
 + To build: `npm run build`
 
+## Code Generation Notes
++ Global variables will get initialized to 0
+
 ### Manifests
 + minCParser/test/ is for unit tests
 + minCParser/src/ contains the actual file before it's transpied
 + minCParser/dist/ contains files that browsers (nowadays) can render
 + minCParser/src/minCParser.jison is the grammar file
 + minCParser/src/symbol-table, minCParser/src/util, is relevant for semantic analysis
+
 
 
