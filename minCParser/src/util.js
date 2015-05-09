@@ -106,7 +106,6 @@ function getLine(node) {
         return "node was null";
     }
     if (!node.loc) {
-        console.log(node);
         return "location isn't defined for node"
     }
     if (node.terminal) 
@@ -227,6 +226,7 @@ function typeEquality(a, b) {
 }
 
 function compareNodes(funcDecl, funcCallExpr) {
+    console.log(funcDecl, funcCallExpr)
     if (funcDecl.type !== ParserConstants.funcDecl && funcCallExpr.type !== ParserConstants.funcCallExpr) // Try swapping the values if types do not match
         [funcDecl, funcCallExpr] = [funcCallExpr, funcDecl];
     if (funcDecl.type !== ParserConstants.funcDecl || funcCallExpr.type !== ParserConstants.funcCallExpr)

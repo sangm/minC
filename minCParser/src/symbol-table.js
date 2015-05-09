@@ -1,9 +1,11 @@
 import _ from 'lodash'
 import ParserConstants from './ParserConstants'
 import {print, log, getNode, typeEquality, getType} from './util'
+import {NonterminalNode, TerminalNode} from './tree'
 import { MultipleDeclarationError, TypeMismatchError, FunctionMismatchError } from './exceptions.js'
 
 
+const printFunction = "output"
 
 function idEquality(a, b) {
     if (a === b) return false;
@@ -72,7 +74,7 @@ class SymbolTable {
         else if (node.type === ParserConstants.varDecl || node.type === ParserConstants.formalDecl) {
             let nodeType = getNode(node, ParserConstants.typeSpecifier);
             let id = getNode(node, ParserConstants.ID);
-            type += `${nodeType.data} ${id.data}`
+            type += `${nodeType.data}`
         }
         return type;
     }
@@ -100,6 +102,8 @@ class SymbolTable {
         }
         if (this.table[scope][symbol]) {
             let node = this.table[scope][symbol].node;
+            if (symbol === printFunction)
+                return; 
             throw new MultipleDeclarationError(node)
         }
         this.table[scope][symbol] = this.constructSymbol(symbol, type, nodeType);
@@ -158,6 +162,21 @@ class SymbolTable {
     lookup(node, scope) {
         if (!node.type) {
             return "lookup was called without node";
+        }
+        if (node.data === printFunction) {
+            let type = new TerminalNode(ParserConstants.typeSpecifier, 'void')
+            let id = new TerminalNode(ParserConstants.ID, 'output')
+            let formalDecl = new NonterminalNode(ParserConstants.formalDecl, [
+                new TerminalNode(ParserConstants.typeSpecifier, 'int'),
+                new TerminalNode(ParserConstants.ID, 'x')
+            ])
+            let formalDeclList = new NonterminalNode(ParserConstants.formalDeclList, formalDecl)
+            let funcBody = new NonterminalNode(ParserConstants.funBody, [
+                new TerminalNode(ParserConstants.localDeclList, ParserConstants.empty),
+                new TerminalNode(ParserConstants.statementList, ParserConstants.empty)
+            ]);
+            let funcDecl = new NonterminalNode(ParserConstants.funcDecl, [type, id, formalDeclList, funcBody]);
+            this.insert(id.data, funcDecl, ParserConstants.funcDecl, ParserConstants.globalScope)
         }
         scope = scope || ParserConstants.globalScope;
         let global = this.getScope(ParserConstants.globalScope);

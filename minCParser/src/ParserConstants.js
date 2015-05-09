@@ -39,4 +39,8 @@ export default {
     declList: 'DECL_LIST',
     argList: 'ARG_LIST',
     TYPE: 'TYPE',
-    ID: 'ID',}; 
+    ID: 'ID',
+    
+    STORE: 'STORE',
+    LOAD: 'LOAD'
+}; 
