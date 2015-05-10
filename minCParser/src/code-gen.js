@@ -1,7 +1,6 @@
 import ParserConstants from './ParserConstants'
 import ASM from './asm.js'
 import {extractNode, print, printTable, log} from './util'
-import format from 'string-template'
 import {NonterminalNode, TerminalNode} from './tree'
 
 const SIZES = {
