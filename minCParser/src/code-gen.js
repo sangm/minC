@@ -138,7 +138,7 @@ class CodeGenerator {
         return label;
     }
     
-    globalVariables(ast) {
+    globalVariables(ast, table) {
         // look for global variables and add to asm
         let declList = extractNode(ast, ParserConstants.declList);
         if (!declList) {
@@ -150,6 +150,7 @@ class CodeGenerator {
             if (decl.type === ParserConstants.varDecl) {
                 let type = extractNode(decl, ParserConstants.typeSpecifier);
                 let id = extractNode(decl, ParserConstants.ID);
+                this.offset(id, table);
                 this.emit(ParserConstants.globalScope, id.data, SIZES[type.data], GLOBAL_VARIABLES_INIT)
             }
         }
@@ -157,7 +158,6 @@ class CodeGenerator {
     
     offset(node, table) {
         // look up symbol table and find the offset for a variable 
-        console.log(this)
         let scope = table.getScope(this.currentScope),
             entry = scope[node.data],
             offset;
@@ -166,16 +166,21 @@ class CodeGenerator {
                 entry["offset"] = this.offsetCounter;
                 this.offsetCounter += 4;
             }
-            return entry["offset"];
+            return { register: '$fp', offset: entry['offset'] }
         }
-        console.log("Could not find node in symbol table..");
+        else {
+            // global scope
+            let global = table.getScope(ParserConstants.globalScope)
+            entry = global[node.data];
+            return { register: '$gp', offset: entry['offset'] }
+        }
     }
 
     generate(ast, table) {
         if (!ast) {
             return;
         }
-        this.globalVariables(ast);
+        this.globalVariables(ast, table);
         // save $a0 as its used as the accumulator
         this.generateCode(ast, table);
         return this.nodes;
@@ -193,13 +198,13 @@ class CodeGenerator {
             this.generateCode(e1, table);
             if (e1.type === ParserConstants.ID) {
                 offset = this.offset(e1, table);
-                this.emit(ParserConstants.LOAD, this.accu, '$fp', offset)
+                this.emit(ParserConstants.LOAD, this.accu, offset['register'], offset['offset']) 
             }
             this.push(this.accu);
             this.generateCode(e2, table);
             if (e2.type === ParserConstants.ID) {
                 offset = this.offset(e2, table);
-                this.emit(ParserConstants.LOAD, this.accu, '$fp', offset)
+                this.emit(ParserConstants.LOAD, this.accu, offset['register'], offset['offset']) 
             }
             this.pop();
             this.accumulator(type);
@@ -215,7 +220,7 @@ class CodeGenerator {
                     offset;
                 this.generateCode(rightChild, table)
                 offset = this.offset(leftChild, table);
-                this.emit(ParserConstants.STORE, this.accu, '$fp', offset)
+                this.emit(ParserConstants.STORE, this.accu, offset['register'], offset['offset'])
             }
             return;
         }
@@ -265,13 +270,13 @@ class CodeGenerator {
             this.generateCode(e1, table);
             if (e1.type === ParserConstants.ID) {
                 offset = this.offset(e1, table);
-                this.emit(ParserConstants.LOAD, this.accu, '$fp', offset)
+                this.emit(ParserConstants.LOAD, this.accu, offset['register'], offset['offset'])
             }
             this.push(this.accu);
             this.generateCode(e2, table);
             if (e2.type === ParserConstants.ID) {
                 offset = this.offset(e2, table);
-                this.emit(ParserConstants.LOAD, this.accu, '$fp', offset)
+                this.emit(ParserConstants.LOAD, this.accu, offset['register'], offset['offset'])
             }
             this.pop();
             this.emit(ParserConstants.condStmt, 
@@ -332,9 +337,8 @@ class CodeGenerator {
                 }
                 if (!arg) {
                     arg = extractNode(argList, ParserConstants.ID);
-                    let scope = table.getScope(this.currentScope),
-                        entry = scope[arg.data];
-                    this.emit(ParserConstants.LOAD, '$a0', '$fp', entry['offset'])
+                    let offset = this.offset(arg, table);
+                    this.emit(ParserConstants.LOAD, '$a0', offset['register'], offset['offset'])
                 }
                 this.emit(ParserConstants.expression, "add", '$v0', '$0', 1)
                 this.emit(ParserConstants.SYSCALL)

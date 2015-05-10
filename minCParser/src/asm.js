@@ -78,12 +78,6 @@ class ASM {
         let assembly = [],
             globals;
         assembly.push(`.data`)
-        globals = asm.filter(node => node.type === 'global');
-        if (globals.length > 0) {
-            assembly = assembly.concat(
-                globals.map(node => `${node.id}:\t${node.size}\t${node.val}`)
-            )
-        } 
         assembly.push(`.text`)
         assembly.push(`.globl main`)
         assembly.push(`jal main`)

@@ -29,9 +29,7 @@
 + Can hold arbituary amount of parameters (as big as the stack I suppose :) )
 + Built a web driver that will lex/parse/semantic/codegen in real time (Dr Qasem mentioned I might be able to attain extra credit from this)
 
-
 ### Bugs
-+ Can't use global variables. Store them in the global data section, just can't reference it.
 + Can't use recursive functions because of bug in semantic analyzer
 
 ### Manifests

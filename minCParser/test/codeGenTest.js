@@ -21,12 +21,39 @@ describe("Code Generation", () => {
         expect(cgen.generate(null)).to.be.undefined;
     }),
     it('recgonize global variables', () => {
-        let {ast, table} = Parser.Parse("int x; int y; int main() {}");
+        let {ast, table} = Parser.Parse("int x; int y; int main() { x = 10; y = 200; output(x); }");
         let asm = cgen.generate(ast, table)
         let x = ASM.globalVariable('x', '.word', 0)
         let y = ASM.globalVariable('y', '.word', 0)
         expect(asm[0]).to.deep.equal(x);
         expect(asm[1]).to.deep.equal(y);
+        let result = ASM.generate(asm);
+        let expected = `
+        .data
+        .text
+        .globl main
+        jal main
+        add $v0, $0, 10
+        syscall
+
+
+        main:
+        add $fp, $0, $sp
+        sw $ra, 0($sp)
+        addiu $sp, $sp, -4
+        add $a1, $0, 10
+        sw $a1, 4($gp)
+        add $a1, $0, 200
+        sw $a1, 8($gp)
+        lw $a0, 4($gp)
+        add $v0, $0, 1
+        syscall
+        lw $ra, 4($sp)
+        addiu $sp, $sp, 4
+        lw $fp, 0($sp)
+        jr $ra
+        `;
+        expect(trim(result)).to.deep.equal(trim(expected))
     }),
     it('should prepare for funcDecl', () => {
         let {ast, table} = Parser.semantic(`
