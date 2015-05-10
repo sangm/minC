@@ -10,6 +10,13 @@ class ASM {
         }
     }
     
+    static jr(register) {
+        return {
+            type: ParserConstants.JR,
+            register: register
+        }
+    }
+    
     static arith(instruction, a, b, c) {
         /* most use 3 check anyway */
         let base = { type: ParserConstants.expression, instruction: instruction, a: a }
@@ -60,13 +67,22 @@ class ASM {
         }
     }
     
+    static jal(label) {
+        return {
+            type: ParserConstants.JAL,
+            label: label
+        }
+    }
+    
     static generate(asm) {
         let assembly = [],
             line;
         assembly.push(`.data`)
         assembly.push(`.text`)
         assembly.push(`.globl main`)
-        assembly.push(`main:`)
+        assembly.push(`jal main`)
+        assembly.push(`add $v0, $0, 10`)
+        assembly.push(`syscall`)
         
         assembly = assembly.concat(asm.map(node => {
             switch(node.type) {
@@ -84,6 +100,12 @@ class ASM {
                 break;
             case ParserConstants.JUMP:
                 return `j ${node.label}`
+                break;
+            case ParserConstants.JR:
+                return `jr ${node.register}`
+                break;
+            case ParserConstants.JAL:
+                return `jal ${node.label}`
                 break;
             default:
                 return `${node.instruction}, ${node.a}, ${node.b}, ${node.c}`

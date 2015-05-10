@@ -2,6 +2,7 @@ import ParserConstants from './ParserConstants'
 import ASM from './asm.js'
 import {extractNode, print, printTable, log} from './util'
 import format from 'string-template'
+import {NonterminalNode, TerminalNode} from './tree'
 
 const SIZES = {
     "int": ".word"
@@ -118,6 +119,14 @@ class CodeGenerator {
             [label] = rest;
             this.nodes.push(ASM.jump(label))
             break;
+        case ParserConstants.JR:
+            [register] = rest;
+            this.nodes.push(ASM.jr(register))
+            break;
+        case ParserConstants.JAL:
+            [label] = rest;
+            this.nodes.push(ASM.jal(label));
+            break;
         default:
             [instr, register, a, b] = rest;
             this.nodes.push(ASM.arith(instr, register, a, b))
@@ -182,11 +191,8 @@ class CodeGenerator {
             return;
         }
         this.globalVariables(ast);
-
         // save $a0 as its used as the accumulator
         this.generateCode(ast, table);
-        this.emit(ParserConstants.expression, 'add', '$v0', '$0', 10);
-        this.emit(ParserConstants.SYSCALL);
         return this.nodes;
     }
     
@@ -195,7 +201,6 @@ class CodeGenerator {
             return;
 
         let type = ast.type;
-
         if (addExpr.findIndex(e => e === type) !== -1) {
             let e1 = ast.children[0],
                 e2 = ast.children[1];
@@ -204,6 +209,26 @@ class CodeGenerator {
             this.generateCode(e2, table);
             this.pop();
             this.accumulator(type);
+            return;
+        }
+        else if (type === ParserConstants.funcDecl) {
+            /* int id(a1...an) e1 */
+            let e1 = extractNode(ast, ParserConstants.funBody),
+                a = extractNode(ast, ParserConstants.formalDeclList),
+                id = extractNode(ast, ParserConstants.ID),
+                sizeConst = id.data === 'main' ? 4 : 8,
+                size = a ? a.getChildren().length * 4 + sizeConst : sizeConst;
+                
+
+            this.emit(ParserConstants.LABEL, id.data)
+            this.emit(ParserConstants.expression, 'add', '$fp', '$0', '$sp')
+            this.emit(ParserConstants.STORE, '$ra', '$sp', 0)
+            this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', -4)
+            this.generateCode(e1);
+            this.emit(ParserConstants.LOAD, '$ra', '$sp', 4)
+            this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', size)
+            this.emit(ParserConstants.LOAD, '$fp', '$sp', 0)
+            this.emit(ParserConstants.JR, '$ra');
             return;
         }
         else if (type === ParserConstants.loopStmt) {
@@ -275,6 +300,21 @@ class CodeGenerator {
                 this.emit(ParserConstants.expression, 'add', '$a0', '$0', arg.data)
                 this.emit(ParserConstants.expression, "add", '$v0', '$0', 1)
                 this.emit(ParserConstants.SYSCALL)
+            }
+            else {
+                /* f(e1...en)  */
+                let en = extractNode(ast, ParserConstants.argList)
+                            .getChildren()
+                            .reverse(),
+                    id = extractNode(ast, ParserConstants.ID);
+                this.emit(ParserConstants.STORE, '$fp', '$sp', 0)
+                this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', -4)
+                en.forEach(e => {
+                    this.generateCode(e);
+                    this.emit(ParserConstants.STORE, '$a0', '$sp', 0)
+                    this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', -4)
+                });
+                this.emit(ParserConstants.JAL, id.data);
             }
             return; 
         }

@@ -46,5 +46,8 @@ export default {
     SYSCALL: 'SYSCALL',
     LABEL: 'LABEL',
     JUMP: 'JUMP',
+    JR: 'JR',
+    JAL: 'JAL',
     printFunc: "output",
+    
 }; 

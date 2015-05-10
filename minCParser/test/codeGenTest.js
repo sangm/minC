@@ -28,6 +28,30 @@ describe("Code Generation", () => {
         expect(asm[0]).to.deep.equal(x);
         expect(asm[1]).to.deep.equal(y);
     }),
+    it('should prepare for funcDecl', () => {
+        let {ast, table} = Parser.semantic(`
+            int main() { }    
+        `);
+        let asm = cgen.generate(ast, table);
+        let result = ASM.generate(asm),
+            expected = `
+            .data
+            .text
+            .globl main
+            jal main
+            add $v0, $0, 10
+            syscall
+            main:
+            add, $fp, $0, $sp
+            sw $ra, 0($sp)
+            addiu, $sp, $sp, -4
+            lw $ra, 4($sp)
+            addiu, $sp, $sp, 4
+            lw $fp, 0($sp)
+            jr $ra
+        `;
+        expect(trim(result)).to.deep.equal(trim(expected))
+    })
     describe("File I/O", () =>{
         it('should recognize output as a function without being defined', () => {
             let {ast, table} = Parser.semantic('int main() {output(8);}')
@@ -114,19 +138,10 @@ describe("Code Generation", () => {
     }),
     describe('Storing Variables', () => {
         it('should store into register', () => {
-            
-            let {ast, table }  = Parser.Parse("int main() { int x; int y; x = 2; y = 4; }")
-            // test for multiple functions scope
+            let {ast, table }  = Parser.Parse("int main() { int x; x = 2; }")
             let asm = cgen.generate(ast, table);
-            let a = ASM.arithInstruction('li', '$t0', 2)
-            let b = ASM.arithInstruction('li', '$t1', 4)
-            
-            expect(asm[0]).to.deep.equal(a);
-            expect(asm[1]).to.deep.equal(b);
-            expect(asm.length).to.equal(2);
+            console.log(ASM.generate(asm))
         })
-        
-        
     }),
     describe('Simple Arithmetic Expressions', () => {
         it('add/sub/mul/div', () => {
