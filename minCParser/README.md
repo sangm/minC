@@ -2,6 +2,10 @@
 
 ## Driver
 + Usage: node minC.js --file(optional) filename --folding(optional) --overloading(optional)
+### Options
++ --ast : abstract syntax tree
++ --table : symbol table
++ --asm : assembly code
 
 ## Semantic Analysis Notes
 + Allows overloading functions (not 100%). Does not "lookup" correctly(due to not having enough time to correctly parse type), so will throw "Undeclared Error"
@@ -10,7 +14,6 @@
 + To build: `npm run build`
 
 ## Code Generation Notes
-+ Global variables will get initialized to 0
 + Target Architecture: MIPS
 
 ### Activation Record
@@ -23,7 +26,7 @@
 + Invariants of the Stack Machine
 + + register `$a1` holds the top of the stack
 + + rest of the stack is maintained by the $sp pointer
-+ + $sp will be the same after every functiono call (equal pushes/pops)
++ + $sp will be the same after every function call (equal pushes/pops)
 
 ### Extra Credit
 + Can hold arbituary amount of parameters (as big as the stack I suppose :) )

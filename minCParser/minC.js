@@ -27,8 +27,12 @@ function handleInput(data) {
         var ast = parser.ast;
         var symTable = parser.table;
         console.log(colors.magenta(data));
-        printTable(symTable.table);
-        print(ast);
+        if (args['ast']) {
+            print(ast);
+        }
+        if (args['table']) {
+            printTable(symTable.table);
+        }
         if (args["asm"]) {
             // do code generation here
             var asm = codeGen.generate(ast, symTable);
