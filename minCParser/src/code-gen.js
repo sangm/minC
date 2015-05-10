@@ -158,6 +158,7 @@ class CodeGenerator {
     
     offset(node, table) {
         // look up symbol table and find the offset for a variable 
+        console.log(this)
         let scope = table.getScope(this.currentScope),
             entry = scope[node.data],
             offset;
@@ -212,13 +213,10 @@ class CodeGenerator {
             else {
                 let leftChild = ast.children[0],
                     rightChild = ast.children[1],
-                    fpOffset = 4;
+                    offset;
                 this.generateCode(rightChild, table)
-                let offset = this.offset(leftChild, table);
+                offset = this.offset(leftChild, table);
                 this.emit(ParserConstants.STORE, this.accu, '$fp', offset)
-
-                // store value
-                /* TODO */
             }
             return;
         }
@@ -261,12 +259,21 @@ class CodeGenerator {
                 e3 = loopStmt.children[1],
                 beginLoop = this.nextLabel(),
                 enterLoop = this.nextLabel(),
-                endLoop = this.nextLabel();
+                endLoop = this.nextLabel(),
+                offset;
 
             this.emit(ParserConstants.LABEL, beginLoop);
             this.generateCode(e1, table);
+            if (e1.type === ParserConstants.ID) {
+                offset = this.offset(e1, table);
+                this.emit(ParserConstants.LOAD, this.accu, '$fp', offset)
+            }
             this.push(this.accu);
             this.generateCode(e2, table);
+            if (e2.type === ParserConstants.ID) {
+                offset = this.offset(e2, table);
+                this.emit(ParserConstants.LOAD, this.accu, '$fp', offset)
+            }
             this.pop();
             this.emit(ParserConstants.condStmt, 
                       INSTRUCTIONS[predicate.type],

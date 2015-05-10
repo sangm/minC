@@ -122,6 +122,62 @@ describe("Code Generation", () => {
         })
     }),
     describe("Loops", () => {
+        it('loop with variable', () => {
+            let {ast, table} = Parser.semantic(`
+                int main() {
+                    int x;
+                    x = 10;
+                    while (x > 0) {
+                        output(x);
+                        x = x - 1;
+                    }
+                }                              
+            `)
+            let asm = cgen.generate(ast, table);
+            let result = ASM.generate(asm);
+            let expected = `
+            .data
+            .text
+            .globl main
+            jal main
+            add $v0, $0, 10
+            syscall
+            main:
+            add $fp, $0, $sp
+            sw $ra, 0($sp)
+            addiu $sp, $sp, -4
+            add $a1, $0, 10
+            sw $a1, 4($fp)
+            ll0:
+            lw $a1, 4($fp)
+            sw $a1, 0($sp)
+            addiu $sp, $sp, -4
+            add $a1, $0, 0
+            lw $t0, 4($sp)
+            addiu $sp, $sp, 4
+            bgt $t0, $a1, ll1
+            j ll2
+            ll1:
+            lw $a0, 4($fp)
+            add $v0, $0, 1
+            syscall
+            lw $a1, 4($fp)
+            sw $a1, 0($sp)
+            addiu $sp, $sp, -4
+            add $a1, $0, 1
+            lw $t0, 4($sp)
+            addiu $sp, $sp, 4
+            sub $a1, $t0, $a1
+            sw $a1, 4($fp)
+            j ll0
+            ll2:
+            lw $ra, 4($sp)
+            addiu $sp, $sp, 4
+            lw $fp, 0($sp)
+            jr $ra
+            `;
+            expect(trim(result)).to.deep.equal(trim(expected))
+        }),
         it('basic loop', () => {
             let {ast, table} = Parser.semantic("int main() { while (4 == 1) { output(3); }}")
             let asm = cgen.generate(ast, table);
@@ -257,16 +313,14 @@ describe("Code Generation", () => {
                     int x;
                     int y;
                     int z; 
-                    y = 210;
-                    z = 220;
+                    y = 4;
 
-                    x = 500 + (z + y);
+                    x = 2 + y;
                     output(x);
                 }                               
             `)
             let asm = cgen.generate(ast, table);
             let result = ASM.generate(asm);
-            console.log(result);
             let expected = `
             .data
             .text

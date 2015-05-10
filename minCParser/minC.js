@@ -1,3 +1,5 @@
+require('babel/register');
+
 var fs = require('fs');
 var colors = require('colors/safe');
 var readline = require('readline');
@@ -13,7 +15,9 @@ var printTable = require('./dist/util.js').printTable;
 var Table = require('cli-table');
 var readline = require('readline');
 
-var codeGen = require('./dist/code-gen.js')
+var codeGen = require('./src/code-gen.js'),
+    codeGen = new codeGen();
+var ASM = require('./dist/asm.js');
 
 console.log(blue("Usage: node minC.js --file(optional) filename --folding(optional) "));
 
@@ -21,15 +25,14 @@ function handleInput(data) {
     try {
         var parser = minCParser.semantic(data, args);
         var ast = parser.ast;
-        var symTable = parser.table.table;
+        var symTable = parser.table;
         console.log(colors.magenta(data));
-        printTable(symTable);
+        printTable(symTable.table);
         print(ast);
         if (args["asm"]) {
             // do code generation here
             var asm = codeGen.generate(ast, symTable);
-            console.log(asm);
-            
+            console.log(ASM.generate(asm))
         }
     }
     catch(err) {
