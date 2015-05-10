@@ -13,12 +13,26 @@
 + Global variables will get initialized to 0
 + Target Architecture: MIPS
 
+### Activation Record
++ Result of a function call is always in the accumulator (top of the stack)
++ No need to store it in the activation record
++ Activation Record consist of parameters f(a1, a2, ... an) + $fp
 
 ### Register Allocation
 + I've decided to implement a stack machine instead of register based.
 + Invariants of the Stack Machine
 + + register `$a1` holds the top of the stack
 + + rest of the stack is maintained by the $sp pointer
++ + $sp will be the same after every functiono call (equal pushes/pops)
+
+### Extra Credit
++ Can hold arbituary amount of parameters (as big as the stack I suppose :) )
++ Built a web driver that will lex/parse/semantic/codegen in real time (Dr Qasem mentioned I might be able to attain extra credit from this)
+
+
+### Bugs
++ Can't use global variables. Store them in the global data section, just can't reference it.
++ Can't use recursive functions because of bug in semantic analyzer
 
 ### Manifests
 + minCParser/test/ is for unit tests

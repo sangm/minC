@@ -76,8 +76,14 @@ class ASM {
     
     static generate(asm) {
         let assembly = [],
-            line;
+            globals;
         assembly.push(`.data`)
+        globals = asm.filter(node => node.type === 'global');
+        if (globals.length > 0) {
+            assembly = assembly.concat(
+                globals.map(node => `${node.id}:\t${node.size}\t${node.val}`)
+            )
+        } 
         assembly.push(`.text`)
         assembly.push(`.globl main`)
         assembly.push(`jal main`)
@@ -106,6 +112,8 @@ class ASM {
                 break;
             case ParserConstants.JAL:
                 return `jal ${node.label}`
+                break;
+            case ParserConstants.globalScope:
                 break;
             default:
                 return `${node.instruction} ${node.a}, ${node.b}, ${node.c}`

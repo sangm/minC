@@ -21,7 +21,7 @@ describe("Code Generation", () => {
         expect(cgen.generate(null)).to.be.undefined;
     }),
     it('recgonize global variables', () => {
-        let {ast, table} = Parser.Parse("int x; int y;");
+        let {ast, table} = Parser.Parse("int x; int y; int main() {}");
         let asm = cgen.generate(ast, table)
         let x = ASM.globalVariable('x', '.word', 0)
         let y = ASM.globalVariable('y', '.word', 0)
