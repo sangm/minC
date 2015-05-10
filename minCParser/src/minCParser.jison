@@ -125,7 +125,7 @@ funBody
                 functionCalls.map(function (func) {
                     var id = func.children[0];
                     var funcDecl = yy.symbolTable.lookup(id, ParserConstants.globalScope).node;
-                    var result = Util.compareNodes(funcDecl.node, func);
+                    var result = Util.compareNodes(funcDecl.node, func, yy.symbolTable);
                     if (!result) {
                         throw new Exception.FunctionMismatchError(id);
                     }

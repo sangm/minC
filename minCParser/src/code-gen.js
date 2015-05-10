@@ -85,7 +85,7 @@ class CodeGenerator {
         this.labelCounter = 0;
         this.nodes = [];
         this.register = 7;
-        this.offsetCounter = 0;
+        this.offsetCounter = 4;
         this.accu = REGISTERS["accumulator"];
         this.currentScope = ParserConstants.globalScope;
     }
@@ -139,22 +139,6 @@ class CodeGenerator {
         return label;
     }
     
-    nextReg() {
-        if (this.registers > 15)
-            console.log("ran out of temp registers");
-        return REGISTERS[this.register+=1]
-    }
-    
-    nextOffset(type) {
-        // get size
-        let offset = this.offsetCounter;
-        if (type === "int") {
-            this.offsetCounter += 4;
-        }
-        return offset;
-        
-    }
-    
     globalVariables(ast) {
         // look for global variables and add to asm
         let declList = extractNode(ast, ParserConstants.declList);
@@ -179,7 +163,8 @@ class CodeGenerator {
             offset;
         if (entry) {
             if (entry["offset"] == null) {
-                entry["offset"] = this.nextOffset(entry.type);
+                entry["offset"] = this.offsetCounter;
+                this.offsetCounter += 4;
             }
             return entry["offset"];
         }
@@ -203,12 +188,38 @@ class CodeGenerator {
         let type = ast.type;
         if (addExpr.findIndex(e => e === type) !== -1) {
             let e1 = ast.children[0],
-                e2 = ast.children[1];
+                e2 = ast.children[1],
+                offset;
             this.generateCode(e1, table);
+            if (e1.type === ParserConstants.ID) {
+                offset = this.offset(e1, table);
+                this.emit(ParserConstants.LOAD, this.accu, '$fp', offset)
+            }
             this.push(this.accu);
             this.generateCode(e2, table);
+            if (e2.type === ParserConstants.ID) {
+                offset = this.offset(e2, table);
+                this.emit(ParserConstants.LOAD, this.accu, '$fp', offset)
+            }
             this.pop();
             this.accumulator(type);
+            return;
+        }
+        else if (type === ParserConstants.assignStmt) {
+            if (ast.getChildren().length === 1) {
+                this.generateCode(ast.children[0], table);
+            }
+            else {
+                let leftChild = ast.children[0],
+                    rightChild = ast.children[1],
+                    fpOffset = 4;
+                this.generateCode(rightChild, table)
+                let offset = this.offset(leftChild, table);
+                this.emit(ParserConstants.STORE, this.accu, '$fp', offset)
+
+                // store value
+                /* TODO */
+            }
             return;
         }
         else if (type === ParserConstants.funcDecl) {
@@ -218,13 +229,23 @@ class CodeGenerator {
                 id = extractNode(ast, ParserConstants.ID),
                 sizeConst = id.data === 'main' ? 4 : 8,
                 size = a ? a.getChildren().length * 4 + sizeConst : sizeConst;
-                
 
+            this.currentScope = id.data;
+            
+            // set up symbol table for parameters
+            if (a) {
+                let scope = table.getScope(id.data);
+                a.getChildren().forEach((child, index) => {
+                    let id = extractNode(child, ParserConstants.ID);
+                    this.offset(id, table);
+                })
+            }
+            
             this.emit(ParserConstants.LABEL, id.data)
             this.emit(ParserConstants.expression, 'add', '$fp', '$0', '$sp')
             this.emit(ParserConstants.STORE, '$ra', '$sp', 0)
             this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', -4)
-            this.generateCode(e1);
+            this.generateCode(e1, table);
             this.emit(ParserConstants.LOAD, '$ra', '$sp', 4)
             this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', size)
             this.emit(ParserConstants.LOAD, '$fp', '$sp', 0)
@@ -284,20 +305,31 @@ class CodeGenerator {
                       this.accu,
                       trueBranch)
             this.emit(ParserConstants.LABEL, falseBranch);
-            this.generateCode(e4);
+            this.generateCode(e4, table);
             this.emit(ParserConstants.JUMP, endBranch);
             this.emit(ParserConstants.LABEL, trueBranch);
-            this.generateCode(e3);
+            this.generateCode(e3, table);
             this.emit(ParserConstants.LABEL, endBranch);
             return;
         }
         else if (type === ParserConstants.funcCallExpr) {
             let id = extractNode(ast, ParserConstants.ID),
+                argList = extractNode(ast, ParserConstants.argList),
                 arg;
             if (id.data === ParserConstants.printFunc) {
                 // printing integer is li $v0, 1; syscall
-                arg = extractNode(ast, ParserConstants.intConst)
-                this.emit(ParserConstants.expression, 'add', '$a0', '$0', arg.data)
+                // output(n)
+                // argument can either be ID or int
+                arg = extractNode(argList, ParserConstants.intConst)
+                if (arg) {
+                    this.emit(ParserConstants.expression, 'add', '$a0', '$0', arg.data)
+                }
+                if (!arg) {
+                    arg = extractNode(argList, ParserConstants.ID);
+                    let scope = table.getScope(this.currentScope),
+                        entry = scope[arg.data];
+                    this.emit(ParserConstants.LOAD, '$a0', '$fp', entry['offset'])
+                }
                 this.emit(ParserConstants.expression, "add", '$v0', '$0', 1)
                 this.emit(ParserConstants.SYSCALL)
             }
@@ -310,8 +342,8 @@ class CodeGenerator {
                 this.emit(ParserConstants.STORE, '$fp', '$sp', 0)
                 this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', -4)
                 en.forEach(e => {
-                    this.generateCode(e);
-                    this.emit(ParserConstants.STORE, '$a0', '$sp', 0)
+                    this.generateCode(e, table);
+                    this.emit(ParserConstants.STORE, this.accu, '$sp', 0)
                     this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', -4)
                 });
                 this.emit(ParserConstants.JAL, id.data);
@@ -327,6 +359,10 @@ class CodeGenerator {
             this.generateCode(child, table);
         }
     }
+    
+    pushFrame(node) {
+
+    }
 
     push(node) {
         this.emit(ParserConstants.STORE, this.accu, '$sp', 0)
@@ -334,14 +370,8 @@ class CodeGenerator {
     }
     
     pop(node) {
-        if (node === this.accu) {
-            this.emit(ParserConstants.LOAD, this.accu, '$sp', 0)
-        }
-        else {
-            this.emit(ParserConstants.LOAD, '$t0', '$sp', 4)
-            this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', 4)
-        }
-        
+        this.emit(ParserConstants.LOAD, '$t0', '$sp', 4)
+        this.emit(ParserConstants.expression, 'addiu', '$sp', '$sp', 4)
     }
     
     accumulator(type) {

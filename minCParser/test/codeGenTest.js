@@ -42,32 +42,81 @@ describe("Code Generation", () => {
             add $v0, $0, 10
             syscall
             main:
-            add, $fp, $0, $sp
+            add $fp, $0, $sp
             sw $ra, 0($sp)
-            addiu, $sp, $sp, -4
+            addiu $sp, $sp, -4
             lw $ra, 4($sp)
-            addiu, $sp, $sp, 4
+            addiu $sp, $sp, 4
             lw $fp, 0($sp)
             jr $ra
         `;
         expect(trim(result)).to.deep.equal(trim(expected))
     })
     describe("File I/O", () =>{
+        it('should print values from variable', () => {
+            let {ast, table} = Parser.semantic('void foo(int x, int y) {output(y);} int main() {foo(2, 4);}')
+            let asm = cgen.generate(ast, table);
+            let result = ASM.generate(asm);
+            let expected = `
+                .data
+                .text
+                .globl main
+                jal main
+                add $v0, $0, 10
+                syscall
+                foo:
+                add $fp, $0, $sp
+                sw $ra, 0($sp)
+                addiu $sp, $sp, -4
+                lw $a0, 8($fp)
+                add $v0, $0, 1
+                syscall
+                lw $ra, 4($sp)
+                addiu $sp, $sp, 16
+                lw $fp, 0($sp)
+                jr $ra
+                main:
+                add $fp, $0, $sp
+                sw $ra, 0($sp)
+                addiu $sp, $sp, -4
+                sw $fp, 0($sp)
+                addiu $sp, $sp, -4
+                add $a1, $0, 4
+                sw $a1, 0($sp)
+                addiu $sp, $sp, -4
+                add $a1, $0, 2
+                sw $a1, 0($sp)
+                addiu $sp, $sp, -4
+                jal foo
+                lw $ra, 4($sp)
+                addiu $sp, $sp, 4
+                lw $fp, 0($sp)
+                jr $ra
+            `
+            expect(trim(result)).to.deep.equal(trim(expected))
+        }),
         it('should recognize output as a function without being defined', () => {
             let {ast, table} = Parser.semantic('int main() {output(8);}')
-            let funcCall = ast.children[0].children[0].children[2].children[1].children[0].children[0]
-            let asm = cgen.generate(funcCall, table);
+            let asm = cgen.generate(ast, table);
             let result = ASM.generate(asm);
             let expected = `
             .data
             .text
             .globl main
+            jal main
+            add $v0, $0, 10
+            syscall
             main:
-            add, $a0, $0, 8
-            add, $v0, $0, 1
+            add $fp, $0, $sp
+            sw $ra, 0($sp)
+            addiu $sp, $sp, -4
+            add $a0, $0, 8
+            add $v0, $0, 1
             syscall
-            add, $v0, $0, 10
-            syscall
+            lw $ra, 4($sp)
+            addiu $sp, $sp, 4
+            lw $fp, 0($sp)
+            jr $ra
             `
             expect(trim(result)).to.deep.equal(trim(expected))
         })
@@ -81,24 +130,32 @@ describe("Code Generation", () => {
             .data
             .text
             .globl main
+            jal main
+            add $v0, $0, 10
+            syscall
             main:
+            add $fp, $0, $sp
+            sw $ra, 0($sp)
+            addiu $sp, $sp, -4
             ll0:
-            add, $a1, $0, 4
+            add $a1, $0, 4
             sw $a1, 0($sp)
-            addiu, $sp, $sp, -4
-            add, $a1, $0, 1
+            addiu $sp, $sp, -4
+            add $a1, $0, 1
             lw $t0, 4($sp)
-            addiu, $sp, $sp, 4
-            beq, $t0, $a1, ll1
+            addiu $sp, $sp, 4
+            beq $t0, $a1, ll1
             j ll2
             ll1:
-            add, $a0, $0, 3
-            add, $v0, $0, 1
+            add $a0, $0, 3
+            add $v0, $0, 1
             syscall
             j ll0
             ll2:
-            add, $v0, $0, 10
-            syscall
+            lw $ra, 4($sp)
+            addiu $sp, $sp, 4
+            lw $fp, 0($sp)
+            jr $ra
             `
             expect(trim(result)).to.deep.equal(trim(expected))
         })
@@ -109,38 +166,144 @@ describe("Code Generation", () => {
             let asm = cgen.generate(ast, table);
             let result = ASM.generate(asm);
             let expected = `
-                .data
-                .text
-                .globl main
+            .data
+            .text
+            .globl main
+            jal main
+            add $v0, $0, 10
+            syscall
             main:
-            add, $a1, $0, 1
+            add $fp, $0, $sp
+            sw $ra, 0($sp)
+            addiu $sp, $sp, -4
+            add $a1, $0, 1
             sw $a1, 0($sp)
-            addiu, $sp, $sp, -4
-            add, $a1, $0, 2
+            addiu $sp, $sp, -4
+            add $a1, $0, 2
             lw $t0, 4($sp)
-            addiu, $sp, $sp, 4
-            beq, $t0, $a1, ll0
+            addiu $sp, $sp, 4
+            beq $t0, $a1, ll0
             ll1:
-            add, $a0, $0, 20
-            add, $v0, $0, 1
+            add $a0, $0, 20
+            add $v0, $0, 1
             syscall
             j ll2
             ll0:
-            add, $a0, $0, 10
-            add, $v0, $0, 1
+            add $a0, $0, 10
+            add $v0, $0, 1
             syscall
             ll2:
-            add, $v0, $0, 10
+            lw $ra, 4($sp)
+            addiu $sp, $sp, 4
+            lw $fp, 0($sp)
+            jr $ra
+            `
+            expect(trim(result)).to.deep.equal(trim(expected))
+        }),
+        it('should store into register const + const', () => {
+            let {ast, table} = Parser.semantic(`
+                int main() {
+                    int x;
+                    int y;
+                    y = 4;
+                    x = 2 + 4;
+                    output(x);
+                }                               
+            `)
+            let asm = cgen.generate(ast, table);
+            let result = ASM.generate(asm);
+            let expected = `
+            .data
+            .text
+            .globl main
+            jal main
+            add $v0, $0, 10
             syscall
+
+            main:
+            add $fp, $0, $sp
+            sw $ra, 0($sp)
+            addiu $sp, $sp, -4
+
+            add $a1, $0, 4 
+            sw $a1, 4($fp)
+
+            add $a1, $0, 2  
+
+            sw $a1, 0($sp)
+            addiu $sp, $sp, -4
+            add $a1, $0, 4
+            lw $t0, 4($sp)
+            addiu $sp, $sp, 4
+            add $a1, $t0, $a1 
+            sw $a1, 8($fp)
+
+            lw $a0, 8($fp)
+            add $v0, $0, 1
+            syscall
+
+            lw $ra, 4($sp)
+            addiu $sp, $sp, 4
+            lw $fp, 0($sp)
+            jr $ra
             `
             expect(trim(result)).to.deep.equal(trim(expected))
         })
     }),
     describe('Storing Variables', () => {
-        it('should store into register', () => {
-            let {ast, table }  = Parser.Parse("int main() { int x; x = 2; }")
+        it('should store into register const + int', () => {
+            let {ast, table} = Parser.semantic(`
+                int main() {
+                    int x;
+                    int y;
+                    int z; 
+                    y = 210;
+                    z = 220;
+
+                    x = 500 + (z + y);
+                    output(x);
+                }                               
+            `)
             let asm = cgen.generate(ast, table);
-            console.log(ASM.generate(asm))
+            let result = ASM.generate(asm);
+            console.log(result);
+            let expected = `
+            .data
+            .text
+            .globl main
+            jal main
+            add $v0, $0, 10
+            syscall
+
+            main:
+            add $fp, $0, $sp
+            sw $ra, 0($sp)
+            addiu $sp, $sp, -4
+
+            add $a1, $0, 4 
+            sw $a1, 4($fp)
+
+            add $a1, $0, 2  
+
+            sw $a1, 0($sp)
+            addiu $sp, $sp, -4
+            lw $a1, 4($fp)
+
+            lw $t0, 4($sp)
+            addiu $sp, $sp, 4
+            add $a1, $t0, $a1 
+            sw $a1, 8($fp)
+
+            lw $a0, 8($fp)
+            add $v0, $0, 1
+            syscall
+
+            lw $ra, 4($sp)
+            addiu $sp, $sp, 4
+            lw $fp, 0($sp)
+            jr $ra
+            `
+            expect(trim(result)).to.deep.equal(trim(expected))
         })
     }),
     describe('Simple Arithmetic Expressions', () => {
@@ -158,8 +321,7 @@ describe("Code Generation", () => {
                 f = ASM.arith('add', '$a1', '$t0', '$a1'),
                 g = ASM.arith('addiu', '$sp', '$sp', 4),
                 h = ASM.load('$a1', '$sp', 0);
-            
-            expect(asm.length).to.equal(9);
+            expect(asm.length).to.equal(7);
 
             expect(asm[0]).to.deep.equal(c);
             expect(asm[1]).to.deep.equal(a);

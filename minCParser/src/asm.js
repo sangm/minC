@@ -108,7 +108,7 @@ class ASM {
                 return `jal ${node.label}`
                 break;
             default:
-                return `${node.instruction}, ${node.a}, ${node.b}, ${node.c}`
+                return `${node.instruction} ${node.a}, ${node.b}, ${node.c}`
                 break;
             }
         }))

@@ -225,7 +225,7 @@ function typeEquality(a, b) {
         return equalTable[b] === a;
 }
 
-function compareNodes(funcDecl, funcCallExpr) {
+function compareNodes(funcDecl, funcCallExpr, table) {
     if (funcDecl.type !== ParserConstants.funcDecl && funcCallExpr.type !== ParserConstants.funcCallExpr) // Try swapping the values if types do not match
         [funcDecl, funcCallExpr] = [funcCallExpr, funcDecl];
     if (funcDecl.type !== ParserConstants.funcDecl || funcCallExpr.type !== ParserConstants.funcCallExpr)
@@ -241,7 +241,24 @@ function compareNodes(funcDecl, funcCallExpr) {
                       .map(pair => {
                           let [arg, formalDecl] = pair;
                           let argType = arg.type;
+                          if (argType === ParserConstants.ID) {
+                              let scope = table.temp,
+                                  node = scope.find(s => s.symbol === arg.data);
+                              if (node) {
+                                  node = node.type
+                                  argType = extractNode(node, ParserConstants.typeSpecifier).data;
+                              }
+                              if (!node) {
+                                  let declList = extractNode(funcDecl, ParserConstants.formalDeclList),
+                                      decl = extractNode(declList, ParserConstants.formalDecl);
+                                 
+                                  argType = extractNode(decl, ParserConstants.typeSpecifier).data;
+                              }
+                          }
                           let declType = getNode(formalDecl, ParserConstants.typeSpecifier).data;
+                          if (declType === argType) {
+                              return true;
+                          }
                           return typeEquality(declType, argType);
                       }) 
                       .filter(result => result === false);
