@@ -83,8 +83,8 @@ class CodeGenerator {
     constructor() {
         this.labelCounter = 0;
         this.nodes = [];
-        this.register = 7;
         this.offsetCounter = 4;
+        this.globalCounter = 4;
         this.accu = REGISTERS["accumulator"];
         this.currentScope = ParserConstants.globalScope;
     }
@@ -160,13 +160,20 @@ class CodeGenerator {
         // look up symbol table and find the offset for a variable 
         let scope = table.getScope(this.currentScope),
             entry = scope[node.data],
-            offset;
+            offset,
+            register = this.currentScope === ParserConstants.globalScope ? '$gp' : '$fp';
         if (entry) {
             if (entry["offset"] == null) {
-                entry["offset"] = this.offsetCounter;
-                this.offsetCounter += 4;
+                if (this.currentScope === ParserConstants.globalScope) {
+                    entry["offset"] = this.globalCounter;
+                    this.globalCounter += 4;
+                }
+                else {
+                    entry["offset"] = this.offsetCounter;
+                    this.offsetCounter += 4;
+                }
             }
-            return { register: '$fp', offset: entry['offset'] }
+            return { register: register, offset: entry['offset'] }
         }
         else {
             // global scope
